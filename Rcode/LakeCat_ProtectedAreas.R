@@ -37,6 +37,9 @@ Toxic <- read.csv("C:/Ian_GIS/LakeCat/EPA_FRS.csv")
 ForestLoss <- read.csv("C:/Ian_GIS/LakeCat/ForestLossByYear0013.csv")
 Fahr <- read.csv("C:/Ian_GIS/LakeCat/FirePerimeters.csv")
 Deposition <- read.csv("C:/Ian_GIS/LakeCat/NADP.csv")
+Impervious <- read.csv("C:/Ian_GIS/LakeCat/ImperviousSurfaces2011.csv")
+Runoff <- read.csv("C:/Ian_GIS/LakeCat/Runoff.csv")
+Baseflow <- read.csv("C:/Ian_GIS/LakeCat/BFI.csv")
 
 #### D-fine constants ####
 min_protected <- 0 # keep data points (lake catchments) with percent protected above this value
@@ -136,9 +139,12 @@ six_boxplot <- function(dataframe, yvar, ylimits){
 }
 
 ############## Main program #############
-# Calculate total catchment protection for GAPS 1-3
+# Calculate total catchment and watershed protection for GAPS 1-3
 PADUS_LakeCat$PctGAP_Status12Cat <- PADUS_LakeCat$PctGAP_Status1Cat + PADUS_LakeCat$PctGAP_Status2Cat
 PADUS_LakeCat$PctGAP_Status123Cat <- PADUS_LakeCat$PctGAP_Status1Cat + PADUS_LakeCat$PctGAP_Status2Cat + PADUS_LakeCat$PctGAP_Status3Cat
+PADUS_LakeCat$PctGAP_Status12Ws <- PADUS_LakeCat$PctGAP_Status1Ws + PADUS_LakeCat$PctGAP_Status2Ws
+PADUS_LakeCat$PctGAP_Status123Ws <- PADUS_LakeCat$PctGAP_Status1Ws + PADUS_LakeCat$PctGAP_Status2Ws + PADUS_LakeCat$PctGAP_Status3Ws
+
 # create columns for protected vs. unprotected (based on different % catchment protected thresholds)
 # for 75, 90 and 100 % catchment protection (individually for GAP Status 1-2 and 1-3)
 PADUS_LakeCat$ProtectGAP12Cat_75 <- ifelse(PADUS_LakeCat$PctGAP_Status12Cat >= 75, "Protected75", "Unprotected75")
@@ -147,6 +153,15 @@ PADUS_LakeCat$ProtectGAP12Cat_90 <- ifelse(PADUS_LakeCat$PctGAP_Status12Cat >= 9
 PADUS_LakeCat$ProtectGAP123Cat_90 <- ifelse(PADUS_LakeCat$PctGAP_Status123Cat >= 90, "Protected90", "Unprotected90")
 PADUS_LakeCat$ProtectGAP12Cat_100 <- ifelse(PADUS_LakeCat$PctGAP_Status12Cat >= 100, "Protected100", "Unprotected100")
 PADUS_LakeCat$ProtectGAP123Cat_100 <- ifelse(PADUS_LakeCat$PctGAP_Status123Cat >= 100, "Protected100", "Unprotected100")
+
+# for 75, 90 and 100 % watershed protection (individually for GAP Status 1-2 and 1-3)
+PADUS_LakeCat$ProtectGAP12Ws75 <- ifelse(PADUS_LakeCat$PctGAP_Status12Ws >= 75, "Protected75", "Unprotected75")
+PADUS_LakeCat$ProtectGAP123Ws75 <- ifelse(PADUS_LakeCat$PctGAP_Status123Ws >= 75, "Protected75", "Unprotected75")
+PADUS_LakeCat$ProtectGAP12Ws90 <- ifelse(PADUS_LakeCat$PctGAP_Status12Ws >= 90, "Protected90", "Unprotected90")
+PADUS_LakeCat$ProtectGAP123Ws90 <- ifelse(PADUS_LakeCat$PctGAP_Status123Ws >= 90, "Protected90", "Unprotected90")
+PADUS_LakeCat$ProtectGAP12Ws100 <- ifelse(PADUS_LakeCat$PctGAP_Status12Ws >= 100, "Protected100", "Unprotected100")
+PADUS_LakeCat$ProtectGAP123Ws100 <- ifelse(PADUS_LakeCat$PctGAP_Status123Ws >= 100, "Protected100", "Unprotected100")
+
 
 #### Topography ####
 # elevation vs. protected
@@ -170,6 +185,7 @@ NLCD_2011$PctTotalForest2011Cat <- NLCD_2011$PctConif2011Cat + NLCD_2011$PctDeci
 NLCD_2011$PctTotalAg2011Cat <- NLCD_2011$PctCrop2011Cat + NLCD_2011$PctHay2011Cat
 NLCD_2011$PctTotalWetland2011Cat <- NLCD_2011$PctWdWet2011Cat + NLCD_2011$PctHbWet2011Cat
 PADUS_NLCD2011 <- full_join(PADUS_LakeCat, NLCD_2011, by='COMID')
+PADUS_Impervious <- full_join(PADUS_LakeCat, Impervious, by='COMID')
 
 nlcd_vars <- c(names(NLCD_2011)[9:22], names(NLCD_2011)[39:41])
 
@@ -186,10 +202,14 @@ PADUS_Mines <- full_join(PADUS_LakeCat, Mines, by='COMID')
 expo_plot(xvar='MineDensCat', yvar='PctGAP_Status12Cat', dataframe=PADUS_Mines, min_protected=min_protected)
 expo_plot(xvar='MineDensCat', yvar='PctGAP_Status123Cat', dataframe=PADUS_Mines, min_protected=min_protected)
 
+## Hydrology
 # Dams (dams/sq km)
 PADUS_Dams <- full_join(PADUS_LakeCat, Dams, by='COMID')
 expo_plot(xvar='NABD_DensCat', yvar='PctGAP_Status12Cat', dataframe=PADUS_Dams, min_protected=min_protected)
 expo_plot(xvar='NABD_DensCat', yvar='PctGAP_Status123Cat', dataframe=PADUS_Dams, min_protected=min_protected)
+# runoff and baseflow
+PADUS_runoff <- full_join(PADUS_LakeCat, Runoff, by='COMID')
+PADUS_baseflow <- full_join(PADUS_LakeCat, Baseflow, by='COMID')
 
 # Toxic pollution
 PADUS_Toxic <- full_join(PADUS_LakeCat, Toxic, by='COMID')
@@ -235,38 +255,74 @@ boxplot(PADUS_LakeCat$PctGAP_Status123Cat, las=1, ylab='Percent protected', main
 hist(PADUS_LakeCat$PctGAP_Status12Cat, main='GAPS 1-2')
 hist(PADUS_LakeCat$PctGAP_Status123Cat, main='GAPS 1-3')
 
+hist(PADUS_LakeCat$PctGAP_Status12Cat, main='GAPS 1-2', freq=F)
+hist(PADUS_LakeCat$PctGAP_Status123Cat, main='GAPS 1-3',freq=F)
+
 ## How many lakes with 100% catchment protected?
 # GAPS 1-2
-GAP12_100pct_protected <- subset(PADUS_LakeCat, PctGAP_Status12Cat >= 100)
-nrow(GAP12_100pct_protected)
-GAP12_100pct_protected_COMID <- GAP12_100pct_protected$COMID
-NHD_100pct_protected_GAP12 <- subset(NHD_pts, COMID %in% GAP12_100pct_protected_COMID)
+GAP12_100pct_protected_Cat <- subset(PADUS_LakeCat, PctGAP_Status12Cat >= 100)
+nrow(GAP12_100pct_protected_Cat)
+GAP12_100pct_protected_Cat_COMID <- GAP12_100pct_protected_Cat$COMID
+NHD_100pct_protected_Cat_GAP12 <- subset(NHD_pts, COMID %in% GAP12_100pct_protected_Cat_COMID)
 par(mfrow=c(1,1))
-plot(lower48)
-plot(NHD_100pct_protected_GAP12, add=T, col='darkgreen', pch=20)
-title("NHD lakes with 100% catchment protected GAPS 1-2")
-mtext(side=3, paste0("n = ", length(GAP12_100pct_protected_COMID)))
+# plot(lower48)
+# plot(NHD_100pct_protected_Cat_GAP12, add=T, col='darkgreen', pch=20)
+# title("NHD lakes with 100% catchment protected GAPS 1-2")
+# mtext(side=3, paste0("n = ", length(GAP12_100pct_protected_Cat_COMID)))
 
 # GAPS 1-3
-GAP123_100pct_protected <- subset(PADUS_LakeCat, PctGAP_Status123Cat >= 100)
-nrow(GAP123_100pct_protected)
-GAP123_100pct_protected_COMID <- GAP123_100pct_protected$COMID
-NHD_100pct_protected_GAP123 <- subset(NHD_pts, COMID %in% GAP123_100pct_protected_COMID)
-plot(lower48)
-plot(NHD_100pct_protected_GAP123, add=T, col='lightgreen', pch=20)
-title("NHD lakes with 100% catchment protected GAPS 1-3")
-mtext(side=3, paste0("n = ", length(GAP123_100pct_protected_COMID)))
+GAP123_100pct_protected_Cat <- subset(PADUS_LakeCat, PctGAP_Status123Cat >= 100)
+nrow(GAP123_100pct_protected_Cat)
+GAP123_100pct_protected_Cat_COMID <- GAP123_100pct_protected_Cat$COMID
+NHD_100pct_protected_Cat_GAP123 <- subset(NHD_pts, COMID %in% GAP123_100pct_protected_Cat_COMID)
+# plot(lower48)
+# plot(NHD_100pct_protected_Cat_GAP123, add=T, col='lightgreen', pch=20)
+# title("NHD lakes with 100% catchment protected GAPS 1-3")
+# mtext(side=3, paste0("n = ", length(GAP123_100pct_protected_Cat_COMID)))
 
 plot(lower48)
-plot(NHD_100pct_protected_GAP123, add=T, col='lightgreen', pch=20)
-plot(NHD_100pct_protected_GAP12, add=T, col='darkgreen', pch=20)
+plot(NHD_100pct_protected_Cat_GAP123, add=T, col='lightgreen', pch=20)
+plot(NHD_100pct_protected_Cat_GAP12, add=T, col='darkgreen', pch=20)
 legend('bottomleft', legend=c('GAPS 1-2', 'GAPS 1-3'), col=c('darkgreen','lightgreen'), pch=c(16,16))
 title("NHD lakes with 100% catchment protected")
-mtext(side=3, paste0("GAPS 1-2: ", length(GAP12_100pct_protected_COMID), " lakes", ", GAPS 1-3: ", length(GAP123_100pct_protected_COMID), " lakes"))
+mtext(side=3, paste0("GAPS 1-2: ", length(GAP12_100pct_protected_Cat_COMID), " lakes", ", GAPS 1-3: ", length(GAP123_100pct_protected_Cat_COMID), " lakes"))
 
-# Percent of NHD lakes with 100% protection
-nrow(NHD_100pct_protected_GAP12)/nrow(NHD_pts)
-nrow(NHD_100pct_protected_GAP123)/nrow(NHD_pts)
+# Percent of NHD lakes with 100% catchment protection
+nrow(NHD_100pct_protected_Cat_GAP12)/nrow(NHD_pts)
+nrow(NHD_100pct_protected_Cat_GAP123)/nrow(NHD_pts)
+
+## How many lakes with 100% watershed protected?
+# GAPS 1-2
+GAP12_100pct_protected_Ws <- subset(PADUS_LakeCat, PctGAP_Status12Ws >= 100)
+nrow(GAP12_100pct_protected_Ws)
+GAP12_100pct_protected_Ws_COMID <- GAP12_100pct_protected_Ws$COMID
+NHD_100pct_protected_Ws_GAP12 <- subset(NHD_pts, COMID %in% GAP12_100pct_protected_Ws_COMID)
+par(mfrow=c(1,1))
+# plot(lower48)
+# plot(NHD_100pct_protected_Ws_GAP12, add=T, col='darkgreen', pch=20)
+# title("NHD lakes with 100% watershed protected GAPS 1-2")
+# mtext(side=3, paste0("n = ", length(GAP12_100pct_protected_Ws_COMID)))
+
+# GAPS 1-3
+GAP123_100pct_protected_Ws <- subset(PADUS_LakeCat, PctGAP_Status123Ws >= 100)
+nrow(GAP123_100pct_protected_Ws)
+GAP123_100pct_protected_Ws_COMID <- GAP123_100pct_protected_Ws$COMID
+NHD_100pct_protected_Ws_GAP123 <- subset(NHD_pts, COMID %in% GAP123_100pct_protected_Ws_COMID)
+# plot(lower48)
+# plot(NHD_100pct_protected_Ws_GAP123, add=T, col='lightgreen', pch=20)
+# title("NHD lakes with 100% watershed protected GAPS 1-3")
+# mtext(side=3, paste0("n = ", length(GAP123_100pct_protected_Ws_COMID)))
+
+plot(lower48)
+plot(NHD_100pct_protected_Ws_GAP123, add=T, col='lightgreen', pch=20)
+plot(NHD_100pct_protected_Ws_GAP12, add=T, col='darkgreen', pch=20)
+legend('bottomleft', legend=c('GAPS 1-2', 'GAPS 1-3'), col=c('darkgreen','lightgreen'), pch=c(16,16))
+title("NHD lakes with 100% watershed protected")
+mtext(side=3, paste0("GAPS 1-2: ", length(GAP12_100pct_protected_Ws_COMID), " lakes", ", GAPS 1-3: ", length(GAP123_100pct_protected_Ws_COMID), " lakes"))
+
+# Percent of NHD lakes with 100% watershed protection
+nrow(NHD_100pct_protected_Ws_GAP12)/nrow(NHD_pts)
+nrow(NHD_100pct_protected_Ws_GAP123)/nrow(NHD_pts)
 
 ## Because histogram so hard to read, generate table of # and % of NHD lakes at different levels of protection
 # GAPS 1-2
@@ -334,6 +390,12 @@ NHD_protected_table_GAP123[1,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123C
 NHD_protected_table_GAP123[2,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Cat >= 99.5))
 NHD_protected_table_GAP123[1,] <- round(NHD_protected_table_GAP123[1,], 4) #round off first row
 
+# Do protected local catchments tend to have protected watersheds? 
+par(mfrow=c(1,1))
+plot(PADUS_LakeCat$PctGAP_Status12Cat ~ PADUS_LakeCat$PctGAP_Status12Ws, pch=20, main='GAPS 1-2', xlab='Ws', ylab='Cat')
+plot(PADUS_LakeCat$PctGAP_Status123Cat ~ PADUS_LakeCat$PctGAP_Status123Ws, pch=20, main='GAPS 1-3', xlab='Ws', ylab='Cat')
+
+
 ##### Comparing protected vs. unprotected lakes (using different definitions of "protected") based on % watershed protected
 # par(mfrow=c(1,3))
 # tri_boxplot(dataframe=PADUS_ForestLoss, yvar="TotalPctFrstLossCat", ylimits=c(0,5))
@@ -358,10 +420,7 @@ six_boxplot(PADUS_NLCD2011, yvar="PctDecid2011Cat", ylimits=c(0,100)) #percent
 six_boxplot(PADUS_NLCD2011, yvar="PctTotalAg2011Cat", ylimits=c(0,100)) #percent
 six_boxplot(PADUS_NLCD2011, yvar="PctTotalWetland2011Cat", ylimits=c(0,100)) #percent
 six_boxplot(PADUS_RoadDensity, yvar="RdDensCat", ylimits=c(0,30)) #km rds/sq km
-
-six_boxplot(PADUS_Dams, yvar="NABD_DensCat", ylimits=c(0,1)) #dams/sq km #so many zeros that doesn't work visually
-PADUS_Dams_sub <- subset(PADUS_Dams, NABD_DensCat > 0)
-six_boxplot(PADUS_Dams_sub, yvar="NABD_DensCat", ylimits=c(0,15))
+six_boxplot(PADUS_Impervious, yvar='PctImp2011Cat', ylimits=c(0,10)) #percent
 
 six_boxplot(PADUS_Mines, yvar="MineDensCat", ylimits=c(0,1)) #mines/sq km #same zero problem visually
 PADUS_Mines_sub <- subset(PADUS_Mines, MineDensCat > 0)
@@ -374,7 +433,25 @@ six_boxplot(PADUS_LakeCat, yvar="CatAreaSqKm", ylimits=c(0,5)) #sq km
 six_boxplot(PADUS_Fahr, yvar="TotalPctFireCat", ylimits=c(0,10)) #percent (So few lakes with fire; need to subset before plotting)
 six_boxplot(PADUS_ForestLoss, yvar="TotalPctFrstLossCat", ylimits=c(0,10)) #percent
 
+### Lake morphometry
+NHD_pts@data$COMID <- as.numeric(NHD_pts@data$COMID) #COMID was character in NHD; must convert
+PADUS_NHD <- left_join(PADUS_LakeCat, NHD_pts@data, by='COMID')
+PADUS_NHD <- PADUS_NHD[!duplicated(PADUS_NHD$COMID),] #remove duplicate COMID (6 for some reason)
 
+# lake area
+six_boxplot(PADUS_NHD, yvar="AREASQKM", ylimits=c(0,10)) #sq km
+
+# max depth
+PADUS_NHD_maxdepth <- subset(PADUS_NHD, MaxDepth > 0) #think it's meters...
+six_boxplot(PADUS_NHD_maxdepth, yvar="MaxDepth", ylimits=c(0,20))
+
+# Hydrology
+six_boxplot(PADUS_Dams, yvar="NABD_DensCat", ylimits=c(0,1)) #dams/sq km #so many zeros that doesn't work visually
+PADUS_Dams_sub <- subset(PADUS_Dams, NABD_DensCat > 0)
+six_boxplot(PADUS_Dams_sub, yvar="NABD_DensCat", ylimits=c(0,15))
+
+six_boxplot(PADUS_baseflow, yvar='BFICat', ylimits=c(0,100)) #percent of total inflow that is baseflow
+six_boxplot(PADUS_runoff, yvar='RunoffCat', ylimits=c(0,1500)) #mm/month 1971-2000
 
 # Seriously, I hate ggplot
 # ggplot(testz, aes(variable, percent, fill=level)) +
