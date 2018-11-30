@@ -47,6 +47,7 @@ min_protected <- 0 # keep data points (lake catchments) with percent protected a
 #### Load functions ####
 ## these functions make decent exploratory plots, but axes/labels, spacing admittedly not perfect
 source("RCode/functions/expo_plot.R")
+source("RCode/functions/expo_plot_log.R")
 source("RCode/functions/six_boxplot.R")
 source("RCode/functions/six_boxplot_log.R")
 source("RCode/functions/protected_ttest_75_90_100_Cat.R")
@@ -84,6 +85,7 @@ PADUS_LakeCat$ProtectGAP123Ws_100 <- ifelse(PADUS_LakeCat$PctGAP_Status123Ws >= 
 NHD_pts@data$COMID <- as.numeric(NHD_pts@data$COMID) #COMID was character in NHD; must convert
 PADUS_NHD <- left_join(PADUS_LakeCat, NHD_pts@data, by='COMID')
 PADUS_NHD <- PADUS_NHD[!duplicated(PADUS_NHD$COMID),] #remove duplicate COMID (6 for some reason)
+hist(PADUS_NHD$AREASQKM)
 par(mfrow=c(2,2))
 # Lake area (sq km)
 expo_plot(xvar='AREASQKM', yvar='PctGAP_Status12Cat', dataframe=PADUS_NHD, min_protected=min_protected)
@@ -93,6 +95,9 @@ expo_plot(xvar='AREASQKM', yvar='PctGAP_Status123Ws', dataframe=PADUS_NHD, min_p
 
 # maximum lake depth (m)
 PADUS_NHD_maxdepth <- subset(PADUS_NHD, MaxDepth > 0) #meters
+par(mfrow=c(1,1))
+hist(PADUS_NHD_maxdepth$MaxDepth)
+par(mfrow=c(2,2))
 expo_plot(xvar='MaxDepth', yvar='PctGAP_Status12Cat', dataframe=PADUS_NHD_maxdepth, min_protected=min_protected)
 expo_plot(xvar='MaxDepth', yvar='PctGAP_Status123Cat', dataframe=PADUS_NHD_maxdepth, min_protected=min_protected)
 expo_plot(xvar='MaxDepth', yvar='PctGAP_Status12Ws', dataframe=PADUS_NHD_maxdepth, min_protected=min_protected)
@@ -102,6 +107,10 @@ nrow(PADUS_NHD_maxdepth)
 
 ## Watershed morphometry
 # catchment and watershed area (sq km) vs. protected (catchment and watershed area in all LakeCat data tables)
+par(mfrow=c(1,1))
+hist(PADUS_NHD$CatAreaSqKm)
+hist(PADUS_NHD$WsAreaSqKm)
+par(mfrow=c(2,2))
 expo_plot(xvar='CatAreaSqKm', yvar='PctGAP_Status12Cat', dataframe=PADUS_NHD, min_protected=min_protected)
 expo_plot(xvar='CatAreaSqKm', yvar='PctGAP_Status123Cat', dataframe=PADUS_NHD, min_protected=min_protected)
 expo_plot(xvar='CatAreaSqKm', yvar='PctGAP_Status12Ws', dataframe=PADUS_NHD, min_protected=min_protected)
@@ -114,6 +123,8 @@ expo_plot(xvar='WsAreaSqKm', yvar='PctGAP_Status123Ws', dataframe=PADUS_NHD, min
 
 # elevation vs. protected
 PADUS_elevation <- full_join(PADUS_LakeCat, elevation, by='COMID')
+par(mfrow=c(1,1))
+hist(PADUS_elevation$ElevCat)
 expo_plot(xvar='ElevCat', yvar='PctGAP_Status12Cat', dataframe=PADUS_elevation, min_protected=min_protected)
 expo_plot(xvar='ElevCat', yvar='PctGAP_Status123Cat', dataframe=PADUS_elevation, min_protected=min_protected)
 expo_plot(xvar='ElevWs', yvar='PctGAP_Status12Ws', dataframe=PADUS_elevation, min_protected=min_protected)
@@ -257,6 +268,97 @@ expo_plot(xvar='Tmean8110Cat', yvar='PctGAP_Status12Cat', dataframe=PADUS_PRISM,
 expo_plot(xvar='Tmean8110Cat', yvar='PctGAP_Status123Cat', dataframe=PADUS_PRISM, min_protected=min_protected)
 expo_plot(xvar='Tmean8110Ws', yvar='PctGAP_Status12Ws', dataframe=PADUS_PRISM, min_protected=min_protected)
 expo_plot(xvar='Tmean8110Ws', yvar='PctGAP_Status123Ws', dataframe=PADUS_PRISM, min_protected=min_protected)
+
+#### Did basic correlations make sense? Seem to have very non-normal data with mostly low values
+# should explore transformations for many variables
+par(mfrow=c(2,3))
+hist(PADUS_NHD$AREASQKM)
+hist(PADUS_NHD_maxdepth$MaxDepth)
+hist(PADUS_NHD$CatAreaSqKm)
+hist(PADUS_WetIndex$WetIndexCat)
+hist(PADUS_elevation$ElevCat)
+hist(PADUS_PRISM$Precip8110Cat)
+hist(PADUS_PRISM$Tmean8110Cat)
+hist(PADUS_NLCD2011$PctTotalForest2011Cat)
+hist(PADUS_NLCD2011$PctTotalAg2011Cat)
+hist(PADUS_NLCD2011$PctConif2011Cat)
+hist(PADUS_NLCD2011$PctTotalWetland2011Cat)
+hist(PADUS_RoadDensity$RdDensCat)
+hist(PADUS_Impervious$PctImp2011Cat)
+hist(PADUS_Mines$MineDensCat)
+hist(PADUS_Deposition$SN_2008Cat)
+hist(PADUS_Toxic$NPDESDensCat)
+hist(PADUS_Toxic$SuperfundDensCat)
+hist(PADUS_Toxic$TRIDensCat)
+hist(PADUS_Fahr$TotalPctFireCat)
+hist(PADUS_ForestLoss$TotalPctFrstLossCat)
+hist(PADUS_baseflow$BFICat)
+hist(PADUS_Dams$NABD_DensCat)
+hist(PADUS_runoff$RunoffCat)
+
+### possible variables to log transform
+# if need alternatives to log transformation, can look here: http://rcompanion.org/handbook/I_12.html
+# perhaps Boxcox or Tukey's ladder of powers
+par(mfrow=c(1,2))
+hist(PADUS_NHD$AREASQKM)
+hist(log(PADUS_NHD$AREASQKM)) #better
+
+hist(PADUS_NHD_maxdepth$MaxDepth)
+hist(log(PADUS_NHD_maxdepth$MaxDepth)) #better
+
+hist(PADUS_NHD$CatAreaSqKm)
+hist(log(PADUS_NHD$CatAreaSqKm)) #better
+
+hist(PADUS_elevation$ElevCat)
+hist(log(PADUS_elevation$ElevCat)) #somewhat better, but lose lakes a few lakes at sea level or below
+
+# can add little bit to 0 values to retain those, but still lose lakes below sea level
+PADUS_elevation$ElevCat_fudged <- ifelse(PADUS_elevation$ElevCat==0, PADUS_elevation$ElevCat + 0.01, PADUS_elevation$ElevCat)
+hist(PADUS_elevation$ElevCat_fudged)
+hist(log(PADUS_elevation$ElevCat_fudged))
+
+
+hist(PADUS_NLCD2011$PctTotalForest2011Cat)
+hist(log(PADUS_NLCD2011$PctTotalForest2011Cat))
+
+hist(PADUS_NLCD2011$PctTotalAg2011Cat)
+hist(log(PADUS_NLCD2011$PctTotalAg2011Cat))
+
+hist(PADUS_NLCD2011$PctConif2011Cat)
+hist(log(PADUS_NLCD2011$PctConif2011Cat))
+
+hist(PADUS_NLCD2011$PctTotalWetland2011Cat)
+hist(log(PADUS_NLCD2011$PctTotalWetland2011Cat)) #probably OK
+
+hist(PADUS_RoadDensity$RdDensCat)
+hist(log(PADUS_RoadDensity$RdDensCat)) #better
+
+hist(PADUS_Impervious$PctImp2011Cat)
+hist(log(PADUS_Impervious$PctImp2011Cat)) #better
+
+hist(PADUS_Mines$MineDensCat)
+hist(log(PADUS_Mines$MineDensCat)) #better
+
+hist(PADUS_Toxic$NPDESDensCat)
+hist(log(PADUS_Toxic$NPDESDensCat)) #better
+
+hist(PADUS_Toxic$SuperfundDensCat)
+hist(log(PADUS_Toxic$SuperfundDensCat)) #better
+
+hist(PADUS_Toxic$TRIDensCat)
+hist(log(PADUS_Toxic$TRIDensCat)) #better
+
+hist(PADUS_Fahr$TotalPctFireCat)
+hist(log(PADUS_Fahr$TotalPctFireCat)) # somewhat better but still pretty skewed (now to the right)
+
+hist(PADUS_ForestLoss$TotalPctFrstLossCat)
+hist(log(PADUS_ForestLoss$TotalPctFrstLossCat)) #better
+
+hist(PADUS_Dams$NABD_DensCat)
+hist(log(PADUS_Dams$NABD_DensCat)) #better
+
+hist(PADUS_runoff$RunoffCat)
+hist(log(PADUS_runoff$RunoffCat)) #probably good enough
 
 ####### Protection level analysis and mapping protected lakes ###
 par(mfrow=c(2,2))
@@ -407,59 +509,128 @@ plot(PADUS_LakeCat$PctGAP_Status123Cat ~ PADUS_LakeCat$PctGAP_Status123Ws, pch=2
 
 
 ##### Comparing protected vs. unprotected lakes (using different definitions of "protected") based on % watershed protected
+# exploratory boxplots and t-tests (functions analyze both Gaps 1-2 and Gaps 1-3 separately)
 
-# Climate
+## Climate
+# precip
 six_boxplot(dataframe=PADUS_PRISM, yvar="Precip8110Cat", ylimits=c(0,2500)) #mm
+protected_ttest_75_90_100_Cat(dataframe=PADUS_PRISM, yvar='Precip8110Cat')
+six_boxplot(dataframe=PADUS_PRISM, yvar="Precip8110Ws", ylimits=c(0,2500)) #mm
+protected_ttest_75_90_100_Ws(dataframe=PADUS_PRISM, yvar='Precip8110Ws')
+# temp
 six_boxplot(dataframe=PADUS_PRISM, yvar="Tmean8110Cat", ylimits=c(-10,30)) #degC
-
-# Topography
-six_boxplot(PADUS_elevation, yvar="ElevCat", ylimits=c(-100,4500)) #meters
-six_boxplot_log(PADUS_elevation, yvar="ElevCat", ylimits=c(0,20)) #meters
-
-six_boxplot(PADUS_WetIndex, yvar="WetIndexCat", ylimits=c(0,2000)) #index
+protected_ttest_75_90_100_Cat(dataframe=PADUS_PRISM, yvar='Tmean8110Cat')
+six_boxplot(dataframe=PADUS_PRISM, yvar="Tmean8110Ws", ylimits=c(-10,30)) #degC
+protected_ttest_75_90_100_Ws(dataframe=PADUS_PRISM, yvar='Tmean8110Ws')
 
 # Land use/cover
 six_boxplot(PADUS_NLCD2011, yvar="PctTotalForest2011Cat", ylimits=c(0,100)) #percent
+protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctTotalForest2011Cat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctTotalForest2011Ws')
+
 six_boxplot(PADUS_NLCD2011, yvar="PctConif2011Cat", ylimits=c(0,100)) #percent
+protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctConif2011Cat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctConif2011Ws')
+
 six_boxplot(PADUS_NLCD2011, yvar="PctMxFst2011Cat", ylimits=c(0,100)) #percent
 six_boxplot(PADUS_NLCD2011, yvar="PctDecid2011Cat", ylimits=c(0,100)) #percent
+
 six_boxplot(PADUS_NLCD2011, yvar="PctTotalAg2011Cat", ylimits=c(0,100)) #percent
+protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctTotalAg2011Cat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctTotalAg2011Ws')
+
 six_boxplot(PADUS_NLCD2011, yvar="PctTotalWetland2011Cat", ylimits=c(0,100)) #percent
+protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctTotalWetland2011Cat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctTotalWetland2011Ws')
+
 six_boxplot(PADUS_RoadDensity, yvar="RdDensCat", ylimits=c(0,30)) #km rds/sq km
 #six_boxplot_log(PADUS_RoadDensity, yvar="RdDensCat", ylimits=c(0,5)) #km rds/sq km
+protected_ttest_75_90_100_Cat(dataframe=PADUS_RoadDensity, yvar='RdDensCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_RoadDensity, yvar='RdDensWs')
+
 six_boxplot(PADUS_Impervious, yvar='PctImp2011Cat', ylimits=c(0,10)) #percent
 #six_boxplot_log(PADUS_Impervious, yvar='PctImp2011Cat', ylimits=c(0,1)) #percent
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Impervious, yvar='PctImp2011Cat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Impervious, yvar='PctImp2011Ws')
 
-# issue with mines is many lakes with very low densities
-six_boxplot(PADUS_Mines, yvar="MineDensCat", ylimits=c(0,1)) #mines/sq km #same zero problem visually
-PADUS_Mines_sub <- subset(PADUS_Mines, MineDensCat > 0)
-six_boxplot(PADUS_Mines_sub, yvar="MineDensCat", ylimits=c(0,5))
-PADUS_Mines_fudge <- PADUS_Mines
-PADUS_Mines_fudge$MineDensCat <- PADUS_Mines_fudge$MineDensCat + 1
-PADUS_Mines_fudge$MineDensWs <- PADUS_Mines_fudge$MineDensWs + 1
-six_boxplot_log(PADUS_Mines_fudge, yvar='MineDensCat', ylimits=c(0,0.1))
+six_boxplot(PADUS_Mines, yvar="MineDensCat", ylimits=c(0,0.001)) #mines/sq km
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Mines, yvar='MineDensCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Mines, yvar='MineDensWs')
 
-# Local catchment area
+# # issue with mines is many lakes with very low densities
+# PADUS_Mines_sub <- subset(PADUS_Mines, MineDensCat > 0)
+# six_boxplot(PADUS_Mines_sub, yvar="MineDensCat", ylimits=c(0,5))
+# PADUS_Mines_fudge <- PADUS_Mines
+# PADUS_Mines_fudge$MineDensCat <- PADUS_Mines_fudge$MineDensCat + 1
+# PADUS_Mines_fudge$MineDensWs <- PADUS_Mines_fudge$MineDensWs + 1
+# six_boxplot_log(PADUS_Mines_fudge, yvar='MineDensCat', ylimits=c(0,0.1))
+
+# Watershed morphometry
 six_boxplot(PADUS_LakeCat, yvar="CatAreaSqKm", ylimits=c(0,5)) #sq km
-six_boxplot_log(PADUS_LakeCat, yvar="CatAreaSqKm", ylimits=c()) #sq km
+#six_boxplot_log(PADUS_LakeCat, yvar="CatAreaSqKm", ylimits=c()) #sq km
+six_boxplot(PADUS_LakeCat, yvar="WsAreaSqKm", ylimits=c(0,5)) #sq km
+
+six_boxplot(PADUS_elevation, yvar="ElevCat", ylimits=c(-100,4500)) #meters
+#six_boxplot_log(PADUS_elevation, yvar="ElevCat", ylimits=c(0,20)) #meters
+six_boxplot(PADUS_WetIndex, yvar="WetIndexCat", ylimits=c(0,2000)) #index
+
+protected_ttest_75_90_100_Cat(dataframe=PADUS_NHD, yvar='CatAreaSqKm')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_NHD, yvar='WsAreaSqKm')
+
+protected_ttest_75_90_100_Cat(dataframe=PADUS_elevation, yvar='ElevCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_elevation, yvar='ElevWs')
+
+protected_ttest_75_90_100_Cat(dataframe=PADUS_WetIndex, yvar='WetIndexCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_WetIndex, yvar='WetIndexWs')
 
 # Disturbance
 six_boxplot(PADUS_Fahr, yvar="TotalPctFireCat", ylimits=c(0,10)) #percent (So few lakes with fire; need to subset before plotting)
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Fahr, yvar='TotalPctFireCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Fahr, yvar='TotalPctFireWs')
+
 six_boxplot(PADUS_ForestLoss, yvar="TotalPctFrstLossCat", ylimits=c(0,10)) #percent
+protected_ttest_75_90_100_Cat(dataframe=PADUS_ForestLoss, yvar='TotalPctFrstLossCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_ForestLoss, yvar='TotalPctFrstLossWs')
 
 # lake area
 six_boxplot(PADUS_NHD, yvar="AREASQKM", ylimits=c(0,10)) #sq km
+protected_ttest_75_90_100_Cat(dataframe=PADUS_NHD, yvar='AREASQKM')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_NHD, yvar='AREASQKM')
 
 # max depth
 six_boxplot(PADUS_NHD_maxdepth, yvar="MaxDepth", ylimits=c(0,20))
+# Lake morphometry
+protected_ttest_75_90_100_Cat(dataframe=PADUS_NHD_maxdepth, yvar='MaxDepth')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_NHD_maxdepth, yvar='MaxDepth')
 
 # Hydrology
 six_boxplot(PADUS_Dams, yvar="NABD_DensCat", ylimits=c(0,1)) #dams/sq km #so many zeros that doesn't work visually
-PADUS_Dams_sub <- subset(PADUS_Dams, NABD_DensCat > 0)
-six_boxplot(PADUS_Dams_sub, yvar="NABD_DensCat", ylimits=c(0,15))
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Dams, yvar='NABD_DensCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Dams, yvar='NABD_DensWs')
+#PADUS_Dams_sub <- subset(PADUS_Dams, NABD_DensCat > 0)
+#six_boxplot(PADUS_Dams_sub, yvar="NABD_DensCat", ylimits=c(0,15))
 
 six_boxplot(PADUS_baseflow, yvar='BFICat', ylimits=c(0,100)) #percent of total inflow that is baseflow
+protected_ttest_75_90_100_Cat(dataframe=PADUS_baseflow, yvar='BFICat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_baseflow, yvar='BFIWs')
+
 six_boxplot(PADUS_runoff, yvar='RunoffCat', ylimits=c(0,1500)) #mm/month 1971-2000
+protected_ttest_75_90_100_Cat(dataframe=PADUS_runoff, yvar='RunoffCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_runoff, yvar='RunoffWs')
+
+# Non point-source (deposition)
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Deposition, yvar='SN_2008Cat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Deposition, yvar='SN_2008Ws')
+
+# Toxic point-source pollution
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Toxic, yvar='NPDESDensCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Toxic, yvar='NPDESDensWs')
+
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Toxic, yvar='SuperfundDensCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Toxic, yvar='SuperfundDensWs')
+
+protected_ttest_75_90_100_Cat(dataframe=PADUS_Toxic, yvar='TRIDensCat')
+protected_ttest_75_90_100_Ws(dataframe=PADUS_Toxic, yvar='TRIDensWs')
 
 # Seriously, I hate ggplot
 # ggplot(testz, aes(variable, percent, fill=level)) +
@@ -480,81 +651,3 @@ six_boxplot(PADUS_runoff, yvar='RunoffCat', ylimits=c(0,1500)) #mm/month 1971-20
 # unpro <- subset(dataframe, ProtectGAP12Cat_75=='Unprotected75')[,yvar]
 # var.test(pro,unpro) #if p > 0.05, have homoskedasticity
 # t.test(pro,unpro, var.equal=F, paired=F)# perform's Welch's test with unequal variances and unpaired data
-
-# Climate
-protected_ttest_75_90_100_Cat(dataframe=PADUS_PRISM, yvar='Precip8110Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_PRISM, yvar='Precip8110Ws')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_PRISM, yvar='Tmean8110Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_PRISM, yvar='Tmean8110Ws')
-
-# Land use/cover
-protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctConif2011Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctConif2011Ws')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctTotalForest2011Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctTotalForest2011Ws')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctTotalAg2011Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctTotalAg2011Ws')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_NLCD2011, yvar='PctTotalWetland2011Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_NLCD2011, yvar='PctTotalWetland2011Ws')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_RoadDensity, yvar='RdDensCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_RoadDensity, yvar='RdDensWs')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Impervious, yvar='PctImp2011Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Impervious, yvar='PctImp2011Ws')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Mines, yvar='MineDensCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Mines, yvar='MineDensWs')
-
-# Lake morphometry
-protected_ttest_75_90_100_Cat(dataframe=PADUS_NHD, yvar='AREASQKM')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_NHD, yvar='AREASQKM')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_NHD_maxdepth, yvar='MaxDepth')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_NHD_maxdepth, yvar='MaxDepth')
-
-# Watershed morphometry
-protected_ttest_75_90_100_Cat(dataframe=PADUS_NHD, yvar='CatAreaSqKm')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_NHD, yvar='WsAreaSqKm')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_elevation, yvar='ElevCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_elevation, yvar='ElevWs')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_WetIndex, yvar='WetIndexCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_WetIndex, yvar='WetIndexWs')
-
-# Disturbance
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Fahr, yvar='TotalPctFireCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Fahr, yvar='TotalPctFireWs')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_ForestLoss, yvar='TotalPctFrstLossCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_ForestLoss, yvar='TotalPctFrstLossWs')
-
-# Hydrology
-protected_ttest_75_90_100_Cat(dataframe=PADUS_baseflow, yvar='BFICat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_baseflow, yvar='BFIWs')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_runoff, yvar='RunoffCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_runoff, yvar='RunoffWs')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Dams, yvar='NABD_DensCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Dams, yvar='NABD_DensWs')
-
-# Toxic point-source pollution
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Toxic, yvar='NPDESDensCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Toxic, yvar='NPDESDensWs')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Toxic, yvar='SuperfundDensCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Toxic, yvar='SuperfundDensWs')
-
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Toxic, yvar='TRIDensCat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Toxic, yvar='TRIDensWs')
-
-# Non point-source (deposition)
-protected_ttest_75_90_100_Cat(dataframe=PADUS_Deposition, yvar='SN_2008Cat')
-protected_ttest_75_90_100_Ws(dataframe=PADUS_Deposition, yvar='SN_2008Ws')
-
