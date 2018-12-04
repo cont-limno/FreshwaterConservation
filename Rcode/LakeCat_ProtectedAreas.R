@@ -1,6 +1,6 @@
 ####################### LakeCat protected area analysis ########################################
 # Date: 11-26-18
-# updated: 11-27-18
+# updated: 12-3-18
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -9,6 +9,7 @@ library(dplyr)
 library(reshape2)
 library(ggplot2)
 library(raster)
+library(vioplot)
 
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
@@ -364,11 +365,78 @@ hist(log(PADUS_runoff$RunoffCat)) #probably good enough
 par(mfrow=c(2,2))
 boxplot(PADUS_LakeCat$PctGAP_Status12Cat, las=1, ylab='Percent protected', main='GAPS 1-2')
 boxplot(PADUS_LakeCat$PctGAP_Status123Cat, las=1, ylab='Percent protected', main='GAPS 1-3')
-hist(PADUS_LakeCat$PctGAP_Status12Cat, main='GAPS 1-2')
-hist(PADUS_LakeCat$PctGAP_Status123Cat, main='GAPS 1-3')
+hist(PADUS_LakeCat$PctGAP_Status12Cat, main='GAPS 1-2, Cat',xlab='', ylim=c(0,350000))
+hist(PADUS_LakeCat$PctGAP_Status123Cat, main='GAPS 1-3, Cat',xlab='', ylim=c(0,350000))
+hist(PADUS_LakeCat$PctGAP_Status12Ws, main='GAPS 1-2, Ws',xlab='', ylim=c(0,350000))
+hist(PADUS_LakeCat$PctGAP_Status123Ws, main='GAPS 1-3, Ws',xlab='', ylim=c(0,350000))
 
-hist(PADUS_LakeCat$PctGAP_Status12Cat, main='GAPS 1-2', freq=F)
-hist(PADUS_LakeCat$PctGAP_Status123Cat, main='GAPS 1-3',freq=F)
+
+# what if take out zeros and report them?
+box_df <- data.frame(COMID=PADUS_LakeCat$COMID, GAPS12_Cat=PADUS_LakeCat$PctGAP_Status12Cat, GAPS123_Cat=PADUS_LakeCat$PctGAP_Status123Cat,
+                     GAPS12_Ws=PADUS_LakeCat$PctGAP_Status12Ws, GAPS123_Ws=PADUS_LakeCat$PctGAP_Status123Ws)
+
+# boxplot
+par(mfrow=c(1,1))
+box_df <- melt(box_df, id='COMID')
+box_df <- subset(box_df, value > 0)
+boxplot(value ~ variable, data=box_df, las=1)
+
+#violin plot
+v1 <- subset(PADUS_LakeCat, PctGAP_Status12Cat > 0)
+v1 <- v1$PctGAP_Status12Cat
+v2 <- subset(PADUS_LakeCat, PctGAP_Status123Cat > 0)
+v2 <- v2$PctGAP_Status123Cat
+v3 <- subset(PADUS_LakeCat, PctGAP_Status12Ws > 0)
+v3 <- v3$PctGAP_Status12Ws
+v4 <- subset(PADUS_LakeCat, PctGAP_Status123Ws > 0)
+v4 <- v4$PctGAP_Status123Ws
+
+par(mfrow=c(1,1))
+vioplot(v1,v2,v3,v4, ylab='Percent protected',
+        names=c('Gaps 1-2, Cat', 'Gaps 1-3, Cat', 'Gaps 1-2, Ws', 'Gaps 1-3, Ws'), col='gold', ylim=c(0,100))
+
+# with help from: https://stackoverflow.com/questions/19416768/vioplot-r-how-to-set-axis-labels 
+## set up empty plot
+png("C:/Ian_GIS/FreshwaterConservation/ProtectedAreas_paper_figs/violin_pct_protected.png", width = 7,height = 5,units = 'in',res=300)
+par(las=1,bty="l")  ## my preferred setting
+plot(0.5:5,0.5:5,type="n",ylim=c(0,100),
+     axes=FALSE,ann=FALSE)
+vioplot(v1,v2,v3,v4,add=T, col='gold')
+axis(side=1,at=1:4,labels=c('GAPS 1-2, Cat', 'GAPS 1-3, Cat', 'GAPS 1-2, Ws', 'GAPS 1-3, Ws'))
+axis(side=2,at=seq(0,100,10),labels=seq(0,100,10))
+title('Percent protected')
+dev.off()
+
+# for caption, how many 0 values omitted?
+nrow(PADUS_LakeCat) - length(v1)
+nrow(PADUS_LakeCat) - length(v2)
+nrow(PADUS_LakeCat) - length(v3)
+nrow(PADUS_LakeCat) - length(v4)
+
+(nrow(PADUS_LakeCat) - length(v1))/nrow(PADUS_LakeCat)
+(nrow(PADUS_LakeCat) - length(v2))/nrow(PADUS_LakeCat)
+(nrow(PADUS_LakeCat) - length(v3))/nrow(PADUS_LakeCat)
+(nrow(PADUS_LakeCat) - length(v4))/nrow(PADUS_LakeCat)
+
+## relative frequency histogram
+rf1 <- PADUS_LakeCat$PctGAP_Status12Cat
+rf2 <- PADUS_LakeCat$PctGAP_Status123Cat
+rf3 <- PADUS_LakeCat$PctGAP_Status12Ws
+rf4 <- PADUS_LakeCat$PctGAP_Status123Ws
+
+library(HistogramTools)
+par(mfrow=c(2,2))
+PlotRelativeFrequency(hist(rf1, plot=F), main='GAPS 1-2, Cat', xlab='', ylim=c(0,1), las=1)
+PlotRelativeFrequency(hist(rf2, plot=F), main='GAPS 1-3, Cat', xlab='', ylim=c(0,1), las=1, ylab='')
+PlotRelativeFrequency(hist(rf3, plot=F), main='GAPS 1-2, Ws', xlab='', ylim=c(0,1), las=1)
+PlotRelativeFrequency(hist(rf4, plot=F), main='GAPS 1-3, Ws', xlab='', ylim=c(0,1), las=1, ylab='')
+
+## cumulative distribution?
+par(mfrow=c(2,2))
+plot(ecdf(rf1), xlab='', main='GAPS 1-2, Cat',las=1)
+plot(ecdf(rf2), xlab='', ylab='', main='GAPS 1-3, Cat',las=1)
+plot(ecdf(rf3), main='GAPS 1-2, Ws',las=1, xlab='Percent protected')
+plot(ecdf(rf4), ylab='', main='GAPS 1-3, Ws',las=1, xlab='Percent protected')
 
 ## How many lakes with 100% catchment protected?
 # GAPS 1-2
@@ -619,10 +687,15 @@ protected_ttest_75_90_100_Cat(dataframe=PADUS_runoff, yvar='RunoffCat')
 protected_ttest_75_90_100_Ws(dataframe=PADUS_runoff, yvar='RunoffWs')
 
 # Non point-source (deposition)
+six_boxplot(PADUS_Deposition, yvar='SN_2008Cat', ylimits=c()) #S+N in 2008 kg/ha/yr
+six_boxplot(PADUS_Deposition, yvar='SN_2008Ws', ylimits=c())
 protected_ttest_75_90_100_Cat(dataframe=PADUS_Deposition, yvar='SN_2008Cat')
 protected_ttest_75_90_100_Ws(dataframe=PADUS_Deposition, yvar='SN_2008Ws')
 
 # Toxic point-source pollution
+six_boxplot(PADUS_Toxic, yvar='NPDESDensCat', ylimits=c())
+six_boxplot(PADUS_Toxic, yvar='NPDESDensWs', ylimits=c())
+
 protected_ttest_75_90_100_Cat(dataframe=PADUS_Toxic, yvar='NPDESDensCat')
 protected_ttest_75_90_100_Ws(dataframe=PADUS_Toxic, yvar='NPDESDensWs')
 
