@@ -50,3 +50,9 @@ hist(big_mama_df$iws_wl_allwetlandsdissolved_overlapping_area_pct, main='IWS wet
 hist(big_mama_df$iws_wl_connectedwetlandsundissolved_overlapping_area_pct, main='IWS connected wetlands pct', xlab='')
 hist(big_mama_df$buffer500m_streamdensity_streams_density_mperha, main='Buff 500m stream density', xlab='')
 hist(big_mama_df$shoreline_wetlands_pct, main='Shoreline wetland %', xlab='')
+
+# are aquatic conn variables correlated?
+# could eliminate some redundant variables
+noZero <- big_mama_df[,2:ncol(big_mama_df)]
+noZero[noZero == 0] <- NA
+cor(noZero, method='pearson', use='pairwise.complete.obs')
