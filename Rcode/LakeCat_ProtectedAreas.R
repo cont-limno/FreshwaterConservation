@@ -47,14 +47,14 @@ min_protected <- 0 # keep data points (lake catchments) with percent protected a
 
 #### Load functions ####
 ## these functions make decent exploratory plots, but axes/labels, spacing admittedly not perfect
-source("RCode/functions/expo_plot.R")
-source("RCode/functions/expo_plot_log.R")
-source("RCode/functions/six_boxplot.R")
-source("RCode/functions/six_boxplot_log.R")
-source("RCode/functions/protected_ttest_75_90_100_Cat.R")
-source("RCode/functions/protected_ttest_75_90_100_Cat_log.R")
-source("RCode/functions/protected_ttest_75_90_100_Ws.R")
-source("RCode/functions/protected_ttest_75_90_100_Ws_log.R")
+source("Rcode/functions/expo_plot.R")
+source("Rcode/functions/expo_plot_log.R")
+source("Rcode/functions/six_boxplot.R")
+source("Rcode/functions/six_boxplot_log.R")
+source("Rcode/functions/protected_ttest_75_90_100_Cat.R")
+source("Rcode/functions/protected_ttest_75_90_100_Cat_log.R")
+source("Rcode/functions/protected_ttest_75_90_100_Ws.R")
+source("Rcode/functions/protected_ttest_75_90_100_Ws_log.R")
 
 ############## Main program #############
 # Calculate total catchment and watershed protection for GAPS 1-3

@@ -11,7 +11,7 @@ library(ggplot2)
 library(SDMTools)
 library(rgeos)
 library(dplyr)
-#library(spatialEco)
+library(spatialEco)
 
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
@@ -36,109 +36,52 @@ zonal_cost_dist <- read.csv("C:/Ian_GIS/FreshwaterConservation/Exports/MI_CostDi
 # PADUS raster (protected areas database)
 PADUS <- raster("C:/Ian_GIS/FreshwaterConservation/Exports/MI_PADUS.tif")
 
+# Pre-calculated patch metric data
+LakePatchMetrics <- read.csv("Data/MichiganLakePatchStats.csv")
+
 ##### D-fine functions #####
-################### Lake patch statistics ###################
-lake_patch_metrics <- function(lagoslakeid, lake_shp, dispersal_buff, cellsize){
-  #lagoslakeid: unique lake ID in LAGOS
-  #lake_shp: shapefile of lake polygons
-  #dispersal_buff: maximum overland dispersal distance, meters
-  #cellsize: pixel width of analysis
-  
-  # extract focal lake, buffer it by dispersal width, erase focal lake from buffer zone
-  focal_lake <- lagoslakeid
-  focal_lake_shp <- subset(lake_shp, lagoslakei %in% lagoslakeid)
-  focal_lake_buff <- gBuffer(focal_lake_shp, byid=T, width=dispersal_buff)
-  focal_lake_buff_erased <- erase(focal_lake_buff, focal_lake_shp)
-  
-  # identify lakes that intersect with buffer (only lake sections within buffer)
-  intersecting_lakes <- raster::intersect(lake_shp, focal_lake_buff_erased)
-  rtemp <- raster(extent(intersecting_lakes), res=cellsize)#create blank raster before rasterizing lakes based on lagoslakeid
-  intersecting_lakes_ras <- rasterize(intersecting_lakes , rtemp, field=as.numeric(intersecting_lakes@data$lagoslakei.1))
-  
-  # identify lakes that intersect with buffer (FULL lake polygons)
-  intersecting_lakes_full <- subset(lake_shp, lagoslakei %in% unique(intersecting_lakes@data$lagoslakei.1))
-  rtemp <- raster(extent(intersecting_lakes_full), res=cellsize)
-  intersecting_lakes_full_ras <- rasterize(intersecting_lakes_full, rtemp, field=as.numeric(intersecting_lakes_full@data$lagoslakei))
-  
-  # patch statistics for portions of lakes that fall within buffer (only interested in perimeter, which is edge/entry into lakes)
-  BuffPatchStatz <- PatchStat(intersecting_lakes_ras, cellsize=cellsize, latlon=F) #verified by Ian: does not perform on whole lake; just intersecting part
-  
-  # patch statistics for full lakes intersecting with buffer, including portions of those lakes outside buffer
-  FullLakePatchStatz <- PatchStat(intersecting_lakes_full_ras, cellsize=cellsize, latlon=F)
-  newcolnames <- c(names(FullLakePatchStatz)[1], paste0(names(FullLakePatchStatz)[2:ncol(FullLakePatchStatz)],'.full.lake'))
-  colnames(FullLakePatchStatz) <- newcolnames
-  FullLakePatchStatz$EdgeLength_m <- BuffPatchStatz$perimeter
-  FullLakePatchStatz$LakeAreaInBuffer_sqm <- BuffPatchStatz$area
-  FullLakePatchStatz <- FullLakePatchStatz[,c('area.full.lake','EdgeLength_m','LakeAreaInBuffer_sqm','shape.index.full.lake')]
-  # NEED TO CALCULATE TOTALS FOR ALL OF THESE EXCEPT SHAPE INDEX (get mean)
-  abc <- colSums(FullLakePatchStatz[,1:3], na.rm=T)
-  d <- mean(FullLakePatchStatz$shape.index.full.lake, na.rm=T)
-  nLakePatches <- nrow(FullLakePatchStatz) 
-  output <- data.frame(lagoslakeid=lagoslakeid, nLakePatches=nLakePatches, area.full.lake.sqm=abc[1], EdgeLength_m=abc[2], LakeAreaInBuffer_sqm=abc[3],
-                       mean.shape.index.full.lake=d)
-  rownames(output) <- lagoslakeid
-  return(output)
-  
-  # clean up
-  FullLakePatchStatz <- NULL
-  newcolnames <- NULL
-  intersecting_lakes_full <- NULL
-  intersecting_lakes_full_ras <- NULL
-  intersecting_lakes <- NULL
-  intersecting_lakes_ras <- NULL
-  BuffPatchStatz <- NULL
-  focal_lake <- NULL
-  focal_lake_buff <- NULL
-  focal_lake_buff_erased <- NULL
-  focal_lake_shp <- NULL
-  rtemp <- NULL
-  output <- NULL
-  abc <- NULL
-  d <- NULL
-  nLakePatches <- NULL
-}
-# test function
-whee <- lake_patch_metrics(lagoslakeid=48001, lake_shp=mich_lakes_LAGOS, cellsize=30, dispersal_buff=dispersal_buff)
+
+source("Rcode/functions/lake_patch_metrics.R")
+
+################### Lake patch statistics within specified buffer zones ###################
+# may be species-based or hypothetical buffer distance from focal lake
+
+## Loop function over all Michigan LAGOS lakes (>= 4ha)
+mich_lakes_LAGOS <- subset(lakes_4ha_poly, STATE=='MI')
 mich_lagoslakeids <- unique(mich_lakes_LAGOS@data$lagoslakei)
 
-whee <- lake_patch_metrics(lagoslakeid=mich_lagoslakeids[10], lake_shp=mich_lakes_LAGOS, cellsize=30, dispersal_buff=dispersal_buff)
+# set dispersal buffer width and cellsize for raster analysis
+dispersal_buff <- 2000 #meters
+cellsize <- 30 #m cell width
+
+# test function
+# use all 4ha lakes so can account for connectivity into neighboring states (may need to remove Ontario border lakes eventually, though)
+# but would need patchstats for those states...
+whee <- lake_patch_metrics(lagoslakeid=95687, lake_shp=lakes_4ha_poly, cellsize=30, dispersal_buff=dispersal_buff, patchmetric_df=LakePatchMetrics)
+
+# create empty data frame, with each iteration filling in a row
+LakeBufferPatchStatz <- data.frame(matrix(NA, nrow = length(mich_lagoslakeids), ncol = 12))
+colnames(LakeBufferPatchStatz) <- c('lagoslakeid','FullLakeArea_ha','FullLakePerimeter_km','FullLakeEdgeArea_ha','FullLakeCoreArea_ha',
+                                    'AvgFullLakeShapeIndex','AvgFullLakeCoreAreaIndex','nLakePatches','BuffArea_ha','EdgeLengthInBuff_km',
+                                    'EdgeAreaInBuff_ha','EdgeAreaInBuff_pct')
+for (i in 1:length(mich_lagoslakeids)){
+  tump <- lake_patch_metrics(lagoslakeid=mich_lagoslakeids[i], lake_shp=lakes_4ha_poly, dispersal_buff=dispersal_buff, cellsize=cellsize, patchmetric_df=LakePatchMetrics)
+  LakeBufferPatchStatz[i,] <- tump
+  tump <- NULL
+}
 
 
-
-focal_lake <- mich_lagoslakeids[10]
-focal_lake_shp <- subset(mich_lakes_LAGOS, lagoslakei %in% focal_lake)
-focal_lake_buff <- gBuffer(focal_lake_shp, byid=T, width=dispersal_buff)
-focal_lake_buff_erased <- erase(focal_lake_buff, focal_lake_shp)
-
-# identify lakes that intersect with buffer (only lake sections within buffer)
-intersecting_lakes <- raster::intersect(mich_lakes_LAGOS, focal_lake_buff_erased)
-rtemp <- raster(extent(intersecting_lakes), res=30)
-intersecting_lakes_ras <- rasterize(intersecting_lakes , rtemp, field=as.numeric(intersecting_lakes@data$lagoslakei.1))
-
-# identify lakes that intersect with buffer (FULL lake polygons)
-intersecting_lakes_full <- subset(mich_lakes_LAGOS, lagoslakei %in% unique(intersecting_lakes@data$lagoslakei.1))
-rtemp <- raster(extent(intersecting_lakes_full), res=30)
-intersecting_lakes_full_ras <- rasterize(intersecting_lakes_full, rtemp, field=as.numeric(intersecting_lakes_full@data$lagoslakei))
-
-plot(focal_lake_buff_erased, col='gold')
-plot(intersecting_lakes_ras, col='dodgerblue', add=T)
-
-# patch statistics for portions of lakes that fall within buffer (only interested in perimeter, which is edge/entry into lakes)
-BuffPatchStatz <- PatchStat(intersecting_lakes_ras, cellsize=30, latlon=F) #verified by Ian: does not perform on whole lake; just intersecting part
-EdgeLength_m <- BuffPatchStatz$perimeter
-
-# pathc statistics for full lakes intersecting with buffer, including portions of those lakes outside buffer
-FullLakePatchStatz <- PatchStat(intersecting_lakes_full_ras, cellsize=30, latlon=F)
-
-############# Patch stats on Michigan lakes ########
-lake_size_cutoff <- 0.04 #sq km (1 sq km = 100 ha) for NHD
+############# Patch stats on Michigan lakes ###########
+# Calculated as if lakes are patches in the same way as terrestrial patches
+# not taking into account dispersal abilities of species
+# essentially a landscape structure analysis based on lake shape and other patch-type stats
 
 # create subset of Michigan lakes based on lake size (patch size) cutoff
+#lake_size_cutoff <- 0.04 #sq km (1 sq km = 100 ha) for NHD
 #mich_lakes_NHD_sub <- subset(mich_lakes_NHD, AREASQKM >= lake_size_cutoff)
 
 # keep only FTYPE = LakePond or Reservoir
 #mich_lakes_NHD_sub <- subset(mich_lakes_NHD_sub, FTYPE=='LakePond' | FTYPE=='Reservoir')
-mich_lakes_LAGOS <- subset(lakes_4ha_poly, STATE=='MI')
 
 # get rid of Great Lakes for now
 #great_lakes_comid <- c(904140245, 904140244, 904140243, 904140248)
@@ -177,8 +120,11 @@ hist(test$frac.dim.index, main='Fractal dim index', xlab='Lo-Hi')#1=square, 2=hi
 hist(test$core.area.index, main='Core area index', xlab='Lo-Hi')#pct of patch that is core area
 hist(test$edge.area.index, main='Edge area index', xlab='Lo-Hi')#pct of patch that is edge area
 
-############################ Main program ############################
-### exploratory analysis of lake zonal cost data
+# save output
+#write.csv(test, file="Data/MichiganLakePatchStats.csv")
+
+
+### Analysis of lake zonal cost data (used ArcGIS zonal stats to extract cost distance for each lake)
 hist(zonal_cost_dist$MEAN, breaks=seq(0,30000,100))
 hist(zonal_cost_dist$MEAN, breaks=seq(0,30000,1000), xlim=c(0,10000))
 lower_uppers <- quantile(zonal_cost_dist$MEAN, c(0.05, 0.95))
