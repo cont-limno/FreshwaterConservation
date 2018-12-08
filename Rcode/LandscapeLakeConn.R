@@ -1,6 +1,6 @@
 ####################### Landscape connectivity of lakes ########################################
 # Date: 11-8-18
-# updated: 12-6-18
+# updated: 12-8-18
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -36,7 +36,7 @@ zonal_cost_dist <- read.csv("C:/Ian_GIS/FreshwaterConservation/Exports/MI_CostDi
 # PADUS raster (protected areas database)
 PADUS <- raster("C:/Ian_GIS/FreshwaterConservation/Exports/MI_PADUS.tif")
 
-# Pre-calculated patch metric data
+# Pre-calculated patch metric data (from SDMTools::PatchStat)
 LakePatchMetrics <- read.csv("Data/MichiganLakePatchStats.csv")
 
 ##### D-fine functions #####
@@ -57,19 +57,30 @@ cellsize <- 30 #m cell width
 # test function
 # use all 4ha lakes so can account for connectivity into neighboring states (may need to remove Ontario border lakes eventually, though)
 # but would need patchstats for those states...
-whee <- lake_patch_metrics(lagoslakeid=95687, lake_shp=lakes_4ha_poly, cellsize=30, dispersal_buff=dispersal_buff, patchmetric_df=LakePatchMetrics)
+whee <- lake_patch_metrics(lagoslakeid=99862, lake_shp=lakes_4ha_poly, cellsize=30, dispersal_buff=dispersal_buff, patchmetric_df=LakePatchMetrics)
 
 # create empty data frame, with each iteration filling in a row
-LakeBufferPatchStatz <- data.frame(matrix(NA, nrow = length(mich_lagoslakeids), ncol = 12))
-colnames(LakeBufferPatchStatz) <- c('lagoslakeid','FullLakeArea_ha','FullLakePerimeter_km','FullLakeEdgeArea_ha','FullLakeCoreArea_ha',
-                                    'AvgFullLakeShapeIndex','AvgFullLakeCoreAreaIndex','nLakePatches','BuffArea_ha','EdgeLengthInBuff_km',
-                                    'EdgeAreaInBuff_ha','EdgeAreaInBuff_pct')
+LakeBufferPatchStatz <- data.frame(matrix(NA, nrow = length(mich_lagoslakeids), ncol = 13))
+colnames(LakeBufferPatchStatz) <- c('lagoslakeid','FullLakeArea_ha','FullLakePerimeter_km','FullLakeEdgeArea_ha',
+                                    'AvgFullLakeShapeIndex','FullLakeCoreArea_ha','AvgFullLakeCoreAreaIndex','nLakePatches','BuffArea_ha','EdgeLengthInBuff_km',
+                                    'EdgeAreaInBuff_ha','EdgeAreaInBuff_pct','BufferWidth_m')
 for (i in 1:length(mich_lagoslakeids)){
   tump <- lake_patch_metrics(lagoslakeid=mich_lagoslakeids[i], lake_shp=lakes_4ha_poly, dispersal_buff=dispersal_buff, cellsize=cellsize, patchmetric_df=LakePatchMetrics)
   LakeBufferPatchStatz[i,] <- tump
   tump <- NULL
 }
 
+# tripped: 
+# lagoslakeid: 23961
+# 62520: erase lake from buffer generates empty output, causing error, even though lake and buffer appear to overlap in plot()
+# 1362: ran manually, worked...not sure of issue. Seems to be trying to process non-existent intersecting lakes despite conditional
+# 47003: did not check why...
+
+for (i in 3938:length(mich_lagoslakeids)){
+  tump <- lake_patch_metrics(lagoslakeid=mich_lagoslakeids[i], lake_shp=lakes_4ha_poly, dispersal_buff=dispersal_buff, cellsize=cellsize, patchmetric_df=LakePatchMetrics)
+  LakeBufferPatchStatz[i,] <- tump
+  tump <- NULL
+}
 
 ############# Patch stats on Michigan lakes ###########
 # Calculated as if lakes are patches in the same way as terrestrial patches
