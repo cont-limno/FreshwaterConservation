@@ -37,7 +37,7 @@ zonal_cost_dist <- read.csv("C:/Ian_GIS/FreshwaterConservation/Exports/MI_CostDi
 PADUS <- raster("C:/Ian_GIS/FreshwaterConservation/Exports/MI_PADUS.tif")
 
 # Pre-calculated patch metric data (from SDMTools::PatchStat)
-LakePatchMetrics <- read.csv("Data/MichiganLakePatchStats.csv")
+LakePatchMetrics <- read.csv("Data/MichiganLakePatchStats_wBorderStates.csv")
 
 ##### D-fine functions #####
 
@@ -55,9 +55,10 @@ dispersal_buff <- 2000 #meters
 cellsize <- 30 #m cell width
 
 # test function
-# use all 4ha lakes so can account for connectivity into neighboring states (may need to remove Ontario border lakes eventually, though)
-# but would need patchstats for those states...
-whee <- lake_patch_metrics(lagoslakeid=99862, lake_shp=lakes_4ha_poly, cellsize=30, dispersal_buff=dispersal_buff, patchmetric_df=LakePatchMetrics)
+# use all 4ha lakes so can account for connectivity into neighboring states
+# patchmetric_df contains WI, OH, IN lakes within 10km of Michigan border
+# probably don't have to worry about Ontario due to river border, but may need to eliminate Lake St. Clair
+whee <- lake_patch_metrics(lagoslakeid=70807, lake_shp=lakes_4ha_poly, cellsize=30, dispersal_buff=dispersal_buff, patchmetric_df=LakePatchMetrics)
 
 # create empty data frame, with each iteration filling in a row
 LakeBufferPatchStatz <- data.frame(matrix(NA, nrow = length(mich_lagoslakeids), ncol = 13))

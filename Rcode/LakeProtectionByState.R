@@ -9,6 +9,7 @@ library(raster)
 library(rgeos)
 library(dplyr)
 library(tmap)
+library(rgdal)
 
 #### Input data ####
 setwd('C:/Users/FWL/Documents/FreshwaterConservation')
@@ -16,6 +17,8 @@ setwd('C:/Users/FWL/Documents/FreshwaterConservation')
 PADUS_table <- read.csv("Data/PADUS.csv")
 
 lower48 <- shapefile("C:/Ian_GIS/cb_2016_us_state_500k/lower48.shp")
+NARS_regions <- shapefile("C:/Ian_GIS/NLA_ecoregions/Export_Output.shp")
+NARS_regions <- spTransform(NARS_regions, crs(lower48)) #get into same crs as other data in analysis
 
 NHD_pts <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_waterbody_pts.shp")
 NHD_pts_lakes <- subset(NHD_pts, FTYPE=='LakePond' | FTYPE=='Reservoir')
@@ -83,6 +86,71 @@ protected_lakes_by_state <- function(NHD_pts_lakes_PADUS, lower48, protection_cu
   lower48_names <- NULL
   rowid_NHD_df <- NULL
   return(lake_countz_protected_lower48)
+}
+
+# same basic function, but by NARS ecoregion
+protected_lakes_by_NARS <- function(NHD_pts_lakes_PADUS, NARS_regions, protection_cutoff){
+  #NHD_pts_lakes_PADUS: NHD lake centroids, merged with PADUS data
+  #NARS_regions: Natl aquatic resource survey ecoregion polygons, same crs as NHD
+  #protection_cutoff: % watershed or catchment protected to be considered a protected lake
+  NARS_names <- NARS_regions@data$WSA9
+  # data fraome of lake IDs
+  NHD_pts_lakes_PADUS@data$rowID <- rownames(NHD_pts_lakes_PADUS@data)
+  rowid_NHD_df <- data.frame(rowID=NHD_pts_lakes_PADUS@data$rowID, COMID=NHD_pts_lakes_PADUS@data$COMID)
+  # number of lakes per region
+  # subset points that fall in each region polygon
+  # sp::over doesn't retain attribute data from points, so create data frame to join those data back later based on rowid
+  NARS_COMID <- sp::over(NHD_pts_lakes_PADUS, NARS_regions, returnList = F)
+  NARS_COMID$joinID <- rownames(NARS_COMID)
+  NARS_COMID <- merge(NARS_COMID, rowid_NHD_df, by.x='joinID', by.y='rowID')
+  
+  # get rid of factor; would cause problems later
+  NARS_COMID$COMID <- as.numeric(levels(NARS_COMID$COMID))[NARS_COMID$COMID]
+  
+  # define protected lakes based on % Ws and Cat protected
+  protected_lakes_gap12Cat <- subset(NHD_pts_lakes_PADUS, PctGAP_Status12Cat >= protection_cutoff)
+  protected_lakes_gap123Cat <- subset(NHD_pts_lakes_PADUS, PctGAP_Status123Cat >= protection_cutoff)
+  protected_lakes_gap12Ws <- subset(NHD_pts_lakes_PADUS, PctGAP_Status12Ws >= protection_cutoff)
+  protected_lakes_gap123Ws <- subset(NHD_pts_lakes_PADUS, PctGAP_Status123Ws >= protection_cutoff)
+  
+  # number of protected lakes by region
+  NARS_lakes_byregion_gap12Cat <- colSums(gContains(NARS_regions, protected_lakes_gap12Cat, byid = T))
+  NARS_lakes_byregion_gap123Cat <- colSums(gContains(NARS_regions, protected_lakes_gap123Cat, byid = T))
+  NARS_lakes_byregion_gap12Ws <- colSums(gContains(NARS_regions, protected_lakes_gap12Ws, byid = T))
+  NARS_lakes_byregion_gap123Ws <- colSums(gContains(NARS_regions, protected_lakes_gap123Ws, byid = T))
+  
+  NARS_protected_lakes_DF <- data.frame(Region=NARS_names, ProtectedLakes_gap12Cat=NARS_lakes_byregion_gap12Cat,
+                                        ProtectedLakes_gap123Cat=NARS_lakes_byregion_gap123Cat,
+                                        ProtectedLakes_gap12Ws=NARS_lakes_byregion_gap12Ws,
+                                        ProtectedLakes_gap123Ws=NARS_lakes_byregion_gap123Ws)
+  
+  # proportion of protected lakes by state (out of total lakes in each state)
+  # count number of rows (COMIDs, therefore lakes) per unique state
+  lake_countz_NARS <- NARS_COMID %>%
+    group_by(WSA9) %>%
+    tally()
+  colnames(lake_countz_NARS) <- c("Region","nLakes")
+  lake_countz_protected_NARS <- merge(lake_countz_NARS, NARS_protected_lakes_DF, by="Region", all.x=F)
+  lake_countz_protected_NARS$PropProtected_gap12Cat <- lake_countz_protected_NARS$ProtectedLakes_gap12Cat/lake_countz_protected_NARS$nLakes
+  lake_countz_protected_NARS$PropProtected_gap123Cat <- lake_countz_protected_NARS$ProtectedLakes_gap123Cat/lake_countz_protected_NARS$nLakes
+  lake_countz_protected_NARS$PropProtected_gap12Ws <- lake_countz_protected_NARS$ProtectedLakes_gap12Ws/lake_countz_protected_NARS$nLakes
+  lake_countz_protected_NARS$PropProtected_gap123Ws <- lake_countz_protected_NARS$ProtectedLakes_gap123Ws/lake_countz_protected_NARS$nLakes
+  # clean up for next iteration
+  protected_lakes_gap12Cat <- NULL
+  protected_lakes_gap123Cat <- NULL
+  protected_lakes_gap12Ws <- NULL
+  protected_lakes_gap123Ws <- NULL
+  lake_countz_NARS <- NULL
+  NARS_protected_lakes_DF <- NULL
+  NARS_lakes_byregion_gap12Cat <- NULL
+  NARS_lakes_byregion_gap123Cat <- NULL
+  NARS_lakes_byregion_gap12Ws <- NULL
+  NARS_lakes_byregion_gap123Ws <- NULL
+  NARS_COMID <- NULL
+  rowid_NHD_df <- NULL
+  NARS_names <- NULL
+  rowid_NHD_df <- NULL
+  return(lake_countz_protected_NARS)
 }
 
 ############################ Main program #####################################
@@ -226,3 +294,84 @@ legend('topright', bty='n', legend=paste0('r = ', round(cor(protected_lakes_75pc
 plot(PropProtected_gap123Ws ~ nLakes, data=protected_lakes_75pct, pch=20, ylab='Prop lakes protected', ylim=c(0,0.7), las=1, main='GAPS 1-3, Ws')
 mtext(side=3, '75 pct protected')
 legend('topright', bty='n', legend=paste0('r = ', round(cor(protected_lakes_75pct$PropProtected_gap123Ws, protected_lakes_75pct$nLakes, use='pairwise.complete.obs'),3)))
+
+par(mfrow=c(1,1))
+statenames <- protected_lakes_100pct$State
+barplot(protected_lakes_100pct$PropProtected_gap12Ws, las=1, names.arg=statenames, horiz=T, cex.names=0.5)
+
+# wrangle table of proportion of lakes protected by state to export and reformat in Excel
+LakeProtection_byState <- data.frame(State=protected_lakes_100pct$State, nLakes=protected_lakes_100pct$nLakes,
+                                     PPCat_12_100=protected_lakes_100pct$PropProtected_gap12Cat,
+                                     PPWs_12_100=protected_lakes_100pct$PropProtected_gap12Ws,
+                                     PPCat_123_100=protected_lakes_100pct$PropProtected_gap123Cat,
+                                     PPWs_123_100=protected_lakes_100pct$PropProtected_gap123Ws)
+
+tmp90_table <- data.frame(State=protected_lakes_90pct$State,
+                          PPCat_12_90=protected_lakes_90pct$PropProtected_gap12Cat,
+                          PPWs_12_90=protected_lakes_90pct$PropProtected_gap12Ws,
+                          PPCat_123_90=protected_lakes_90pct$PropProtected_gap123Cat,
+                          PPWs_123_90=protected_lakes_90pct$PropProtected_gap123Ws)
+
+tmp75_table <- data.frame(State=protected_lakes_75pct$State,
+                          PPCat_12_75=protected_lakes_75pct$PropProtected_gap12Cat,
+                          PPWs_12_75=protected_lakes_75pct$PropProtected_gap12Ws,
+                          PPCat_123_75=protected_lakes_75pct$PropProtected_gap123Cat,
+                          PPWs_123_75=protected_lakes_75pct$PropProtected_gap123Ws)
+
+LakeProtection_byState <- merge(LakeProtection_byState, tmp90_table, by='State')
+LakeProtection_byState <- merge(LakeProtection_byState, tmp75_table, by='State')
+#write.csv(LakeProtection_byState, file='Data/LakeProtection_byState.csv')
+
+#### Same analysis, but by NARS ecoregions
+
+# set protection cutoff (for local catchment and network watershed) and execute function
+protected_lakes_NARS_100pct <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regions, protection_cutoff=100)
+protected_lakes_NARS_90pct <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regions, protection_cutoff=90)
+protected_lakes_NARS_75pct <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regions, protection_cutoff=75)
+
+
+barnames <- protected_lakes_NARS_100pct$Region
+barcolors <- c('orange','lightpink','coral','darkseagreen','darkkhaki','lawngreen','dodgerblue','orange4','slateblue')
+ylim <- c(0,0.15)
+barplot(protected_lakes_NARS_100pct$PropProtected_gap12Cat, las=1, ylab='Proportion of lakes protected', names.arg=barnames,
+        col=barcolors, main='100% protected', ylim=ylim)
+
+barplot(protected_lakes_NARS_90pct$PropProtected_gap12Cat, las=1, ylab='Proportion of lakes protected', names.arg=barnames,
+        col=barcolors, main='90% protected', ylim=ylim)
+
+barplot(protected_lakes_NARS_75pct$PropProtected_gap12Cat, las=1, ylab='Proportion of lakes protected', names.arg=barnames,
+        col=barcolors, main='75% protected', ylim=ylim)
+
+
+## Mapping
+# 100%
+lake_countz_protected100_NARS_shp <- merge(NARS_regions, protected_lakes_NARS_100pct, by.x='WSA9', by.y='Region')
+lake_countz_protected90_NARS_shp <- merge(NARS_regions, protected_lakes_NARS_90pct, by.x='WSA9', by.y='Region')
+lake_countz_protected75_NARS_shp <- merge(NARS_regions, protected_lakes_NARS_75pct, by.x='WSA9', by.y='Region')
+
+dsnname <- "C:/Ian_GIS/FreshwaterConservation/PADUS_LakeCat"
+layername <- 'Protected100_NARS'
+#writeOGR(lake_countz_protected100_NARS_shp, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+
+## putting hold on R mapping...err message with "orphaned holes"
+# map_breaks <- c(0,0.01,0.05,0.1,0.25,0.5,Inf)
+# 
+# tm_shape(lake_countz_protected100_NARS_shp)+
+#   tm_fill('PropProtected_gap12Cat', style='fixed', title='Prop Lakes Protected, GAPS 1-2, Cat',
+#           breaks=map_breaks, textNA = 'NA', colorNA = 'gray')+
+#   tm_borders()
+# 
+# tm_shape(lake_countz_protected100_NARS_shp)+
+#   tm_fill('PropProtected_gap123Cat', style='fixed', title='Prop Lakes Protected, GAPS 1-3, Cat',
+#           breaks=map_breaks, textNA = 'NA', colorNA = 'gray')+
+#   tm_borders()
+# 
+# tm_shape(lake_countz_protected100_NARS_shp)+
+#   tm_fill('PropProtected_gap12Ws', style='fixed', title='Prop Lakes Protected, GAPS 1-2, Ws',
+#           breaks=map_breaks, textNA = 'NA', colorNA = 'gray')+
+#   tm_borders()
+# 
+# tm_shape(lake_countz_protected100_NARS_shp)+
+#   tm_fill('PropProtected_gap123Ws', style='fixed', title='Prop Lakes Protected, GAPS 1-3, Ws',
+#           breaks=map_breaks, textNA = 'NA', colorNA = 'gray')+
+#   tm_borders()
