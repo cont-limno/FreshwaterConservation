@@ -43,6 +43,7 @@ lake_patch_metrics <- function(lagoslakeid, lake_shp, dispersal_buff, cellsize, 
   } else {
     # Subtract perimeter of focal lake from total perimeter of intersecting lakes (round to make tiny numbers 0)
     EdgeLength_km <- round(((sum(spatialEco::polyPerimeter(intersecting_lakes), na.rm=T) - spatialEco::polyPerimeter(focal_lake_shp))/1000),4)
+    EdgeLength_km <- ifelse(EdgeLength_km < 0, 0, EdgeLength_km) #if end up with negative due to subtracting focal lake perimeter, make 0
     # get edge habitat area by getting shoreline length in meters, divided by cell size to get number of cells, which then gets multiplied by cell area
     EdgeArea_ha <- (((EdgeLength_km*1000)/cellsize) * (cellsize^2))/10000
 
