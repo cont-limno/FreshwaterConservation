@@ -1,4 +1,4 @@
-####################### Lake protection by US state ############################################
+####################### Lake protection by US state and NARS ecoregion #########################
 # Date: 12-5-18
 # updated:
 # Author: Ian McCullough, immccull@gmail.com
@@ -10,6 +10,8 @@ library(rgeos)
 library(dplyr)
 library(tmap)
 library(rgdal)
+library(reshape2)
+library(ggplot2)
 
 #### Input data ####
 setwd('C:/Users/FWL/Documents/FreshwaterConservation')
@@ -17,7 +19,7 @@ setwd('C:/Users/FWL/Documents/FreshwaterConservation')
 PADUS_table <- read.csv("Data/PADUS.csv")
 
 lower48 <- shapefile("C:/Ian_GIS/cb_2016_us_state_500k/lower48.shp")
-NARS_regions <- shapefile("C:/Ian_GIS/NLA_ecoregions/Export_Output.shp")
+NARS_regions <- shapefile("C:/Ian_GIS/NLA_ecoregions/Export_Output.shp") #Natl Aquatic Resource Survey Ecoregions
 NARS_regions <- spTransform(NARS_regions, crs(lower48)) #get into same crs as other data in analysis
 
 NHD_pts <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_waterbody_pts.shp")
@@ -320,7 +322,39 @@ tmp75_table <- data.frame(State=protected_lakes_75pct$State,
 
 LakeProtection_byState <- merge(LakeProtection_byState, tmp90_table, by='State')
 LakeProtection_byState <- merge(LakeProtection_byState, tmp75_table, by='State')
-#write.csv(LakeProtection_byState, file='Data/LakeProtection_byState.csv')
+LakeProtection_byState[,3:14] <- round(LakeProtection_byState[,3:14], digits=2)
+
+LakeProtection_byState_Export <- data.frame(State=LakeProtection_byState$State, nLakes=LakeProtection_byState$nLakes,
+                                            PP_Cat_Gaps12=paste0(LakeProtection_byState$PPCat_12_75, ', ', LakeProtection_byState$PPCat_12_90, ', ', LakeProtection_byState$PPCat_12_100),
+                                            PP_Ws_Gaps12=paste0(LakeProtection_byState$PPWs_12_75, ', ', LakeProtection_byState$PPWs_12_90, ', ', LakeProtection_byState$PPWs_12_100),
+                                            PP_Cat_Gaps123=paste0(LakeProtection_byState$PPCat_123_75, ', ', LakeProtection_byState$PPCat_123_90, ', ', LakeProtection_byState$PPCat_123_100),
+                                            PP_Ws_Gaps123=paste0(LakeProtection_byState$PPWs_123_75, ', ', LakeProtection_byState$PPWs_123_90, ', ', LakeProtection_byState$PPWs_123_100))
+
+#write.csv(LakeProtection_byState_Export, file='Data/LakeProtection_byState.csv')
+
+# Barplots of lake protection by state
+barplot_df <- data.frame(State=LakeProtection_byState$State, PP75=LakeProtection_byState$PPCat_12_75, PP90=LakeProtection_byState$PPCat_12_90, PP100=LakeProtection_byState$PPCat_12_100)
+melted <- melt(barplot_df, id.vars='State')
+
+barplot_df_Ws <- data.frame(State=LakeProtection_byState$State, PP75=LakeProtection_byState$PPWs_12_75, PP90=LakeProtection_byState$PPWs_12_90, PP100=LakeProtection_byState$PPWs_12_100)
+melted <- melt(barplot_df_Ws, id.vars='State')
+
+# with help from: https://stackoverflow.com/questions/20349929/stacked-bar-plot-in-r
+#png('C:/Ian_GIS/FreshwaterConservation/ProtectedAreas_paper_figs/LakeProtectionByState_Ws.png',width = 7.5,height = 4.75,units = 'in',res=300)
+ggplot(melted, aes(x = State, y = value, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Proportion of lakes protected by state") +
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  scale_fill_manual("legend", values = c("PP75" = "gray82", "PP90" = "gray50", "PP100" = "black"),
+                    labels=c('75%','90%','100%'))+
+  theme(legend.position=c(0.95,0.85))+ #manually reposition legend inside plot
+  theme(legend.title=element_blank()) #remove legend title
+#dev.off()
 
 #### Same analysis, but by NARS ecoregions
 
@@ -329,18 +363,57 @@ protected_lakes_NARS_100pct <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS
 protected_lakes_NARS_90pct <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regions, protection_cutoff=90)
 protected_lakes_NARS_75pct <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regions, protection_cutoff=75)
 
+# wrangle table of proportion of lakes protected by region to export and reformat in Excel
+LakeProtection_byRegion <- data.frame(Region=protected_lakes_NARS_100pct$Region, nLakes=protected_lakes_NARS_100pct$nLakes,
+                                      PPCat_12_100=protected_lakes_NARS_100pct$PropProtected_gap12Cat,
+                                      PPWs_12_100=protected_lakes_NARS_100pct$PropProtected_gap12Ws,
+                                      PPCat_123_100=protected_lakes_NARS_100pct$PropProtected_gap123Cat,
+                                      PPWs_123_100=protected_lakes_NARS_100pct$PropProtected_gap123Ws)
 
-barnames <- protected_lakes_NARS_100pct$Region
-barcolors <- c('orange','lightpink','coral','darkseagreen','darkkhaki','lawngreen','dodgerblue','orange4','slateblue')
-ylim <- c(0,0.15)
-barplot(protected_lakes_NARS_100pct$PropProtected_gap12Cat, las=1, ylab='Proportion of lakes protected', names.arg=barnames,
-        col=barcolors, main='100% protected', ylim=ylim)
+tmp90_table <- data.frame(Region=protected_lakes_NARS_90pct$Region,
+                          PPCat_12_90=protected_lakes_NARS_90pct$PropProtected_gap12Cat,
+                          PPWs_12_90=protected_lakes_NARS_90pct$PropProtected_gap12Ws,
+                          PPCat_123_90=protected_lakes_NARS_90pct$PropProtected_gap123Cat,
+                          PPWs_123_90=protected_lakes_NARS_90pct$PropProtected_gap123Ws)
 
-barplot(protected_lakes_NARS_90pct$PropProtected_gap12Cat, las=1, ylab='Proportion of lakes protected', names.arg=barnames,
-        col=barcolors, main='90% protected', ylim=ylim)
+tmp75_table <- data.frame(Region=protected_lakes_NARS_75pct$Region,
+                          PPCat_12_75=protected_lakes_NARS_75pct$PropProtected_gap12Cat,
+                          PPWs_12_75=protected_lakes_NARS_75pct$PropProtected_gap12Ws,
+                          PPCat_123_75=protected_lakes_NARS_75pct$PropProtected_gap123Cat,
+                          PPWs_123_75=protected_lakes_NARS_75pct$PropProtected_gap123Ws)
 
-barplot(protected_lakes_NARS_75pct$PropProtected_gap12Cat, las=1, ylab='Proportion of lakes protected', names.arg=barnames,
-        col=barcolors, main='75% protected', ylim=ylim)
+LakeProtection_byRegion <- merge(LakeProtection_byRegion, tmp90_table, by='Region')
+LakeProtection_byRegion <- merge(LakeProtection_byRegion, tmp75_table, by='Region')
+LakeProtection_byRegion[,3:14] <- round(LakeProtection_byRegion[,3:14], digits=2)
+
+LakeProtection_byRegion_Export <- data.frame(region=LakeProtection_byRegion$Region, nLakes=LakeProtection_byRegion$nLakes,
+                                             PP_Cat_Gaps12=paste0(LakeProtection_byRegion$PPCat_12_75, ', ', LakeProtection_byRegion$PPCat_12_90, ', ', LakeProtection_byRegion$PPCat_12_100),
+                                             PP_Ws_Gaps12=paste0(LakeProtection_byRegion$PPWs_12_75, ', ', LakeProtection_byRegion$PPWs_12_90, ', ', LakeProtection_byRegion$PPWs_12_100),
+                                             PP_Cat_Gaps123=paste0(LakeProtection_byRegion$PPCat_123_75, ', ', LakeProtection_byRegion$PPCat_123_90, ', ', LakeProtection_byRegion$PPCat_123_100),
+                                             PP_Ws_Gaps123=paste0(LakeProtection_byRegion$PPWs_123_75, ', ', LakeProtection_byRegion$PPWs_123_90, ', ', LakeProtection_byRegion$PPWs_123_100))
+
+#write.csv(LakeProtection_byRegion_Export, file='Data/LakeProtection_byNARSRegion.csv')
+
+# Barplots of lake protection by state
+barplot_df <- data.frame(Region=LakeProtection_byRegion$Region, PP75=LakeProtection_byRegion$PPCat_12_75, PP90=LakeProtection_byRegion$PPCat_12_90, PP100=LakeProtection_byRegion$PPCat_12_100)
+melted <- melt(barplot_df, id.vars='Region')
+
+# with help from: https://stackoverflow.com/questions/20349929/stacked-bar-plot-in-r
+png('C:/Ian_GIS/FreshwaterConservation/ProtectedAreas_paper_figs/LakeProtectionByNARSRegion.png',width = 7.5,height = 4.75,units = 'in',res=300)
+ggplot(melted, aes(x = Region, y = value, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Proportion of lakes protected by region") +
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  scale_fill_manual("legend", values = c("PP75" = "gray82", "PP90" = "gray50", "PP100" = "black"),
+                    labels=c('75%','90%','100%'))+
+  theme(legend.position=c(0.95,0.85))+ #manually reposition legend inside plot
+  theme(legend.title=element_blank()) #remove legend title
+dev.off()
 
 
 ## Mapping

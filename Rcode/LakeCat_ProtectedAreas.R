@@ -1,6 +1,6 @@
 ####################### LakeCat protected area analysis ########################################
 # Date: 11-26-18
-# updated: 12-3-18
+# updated: 12-11-18
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -55,6 +55,7 @@ source("Rcode/functions/protected_ttest_75_90_100_Cat.R")
 source("Rcode/functions/protected_ttest_75_90_100_Cat_log.R")
 source("Rcode/functions/protected_ttest_75_90_100_Ws.R")
 source("Rcode/functions/protected_ttest_75_90_100_Ws_log.R")
+source("Rcode/functions/protected_unprotected_percentiles100.R")
 
 ############## Main program #############
 # Calculate total catchment and watershed protection for GAPS 1-3
@@ -318,7 +319,6 @@ PADUS_elevation$ElevCat_fudged <- ifelse(PADUS_elevation$ElevCat==0, PADUS_eleva
 hist(PADUS_elevation$ElevCat_fudged)
 hist(log(PADUS_elevation$ElevCat_fudged))
 
-
 hist(PADUS_NLCD2011$PctTotalForest2011Cat)
 hist(log(PADUS_NLCD2011$PctTotalForest2011Cat))
 
@@ -370,7 +370,6 @@ hist(PADUS_LakeCat$PctGAP_Status123Cat, main='GAPS 1-3, Cat',xlab='', ylim=c(0,3
 hist(PADUS_LakeCat$PctGAP_Status12Ws, main='GAPS 1-2, Ws',xlab='', ylim=c(0,350000))
 hist(PADUS_LakeCat$PctGAP_Status123Ws, main='GAPS 1-3, Ws',xlab='', ylim=c(0,350000))
 
-
 # what if take out zeros and report them?
 box_df <- data.frame(COMID=PADUS_LakeCat$COMID, GAPS12_Cat=PADUS_LakeCat$PctGAP_Status12Cat, GAPS123_Cat=PADUS_LakeCat$PctGAP_Status123Cat,
                      GAPS12_Ws=PADUS_LakeCat$PctGAP_Status12Ws, GAPS123_Ws=PADUS_LakeCat$PctGAP_Status123Ws)
@@ -390,10 +389,6 @@ v3 <- subset(PADUS_LakeCat, PctGAP_Status12Ws > 0)
 v3 <- v3$PctGAP_Status12Ws
 v4 <- subset(PADUS_LakeCat, PctGAP_Status123Ws > 0)
 v4 <- v4$PctGAP_Status123Ws
-
-par(mfrow=c(1,1))
-vioplot(v1,v2,v3,v4, ylab='Percent protected',
-        names=c('Gaps 1-2, Cat', 'Gaps 1-3, Cat', 'Gaps 1-2, Ws', 'Gaps 1-3, Ws'), col='gold', ylim=c(0,100))
 
 # with help from: https://stackoverflow.com/questions/19416768/vioplot-r-how-to-set-axis-labels 
 ## set up empty plot
@@ -505,7 +500,7 @@ nrow(NHD_100pct_protected_Ws_GAP12)/nrow(NHD_pts)
 nrow(NHD_100pct_protected_Ws_GAP123)/nrow(NHD_pts)
 
 ## Because histogram so hard to read, generate table of # and % of NHD lakes at different levels of protection
-# GAPS 1-2
+# GAPS 1-2, catchment
 NHD_protected_table_GAP12 <- data.frame(matrix(nrow=2, ncol=12))
 colnames(NHD_protected_table_GAP12) <- c('GAP12_0pct','GAP12_0_9pct','GAP12_10_19pct','GAP12_20_29pct',
                                   'GAP12_30_39pct','GAP12_40_49pct','GAP12_50_59pct','GAP12_60_69pct',
@@ -537,7 +532,7 @@ NHD_protected_table_GAP12[1,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Cat
 NHD_protected_table_GAP12[2,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Cat >= 99.5))
 NHD_protected_table_GAP12[1,] <- round(NHD_protected_table_GAP12[1,], 4) #round off first row
 
-# GAPS 1-3
+# GAPS 1-3, catchment
 # Because histogram so hard to read, generate table of # and % of NHD lakes at different levels of protection
 NHD_protected_table_GAP123 <- data.frame(matrix(nrow=2, ncol=12))
 colnames(NHD_protected_table_GAP123) <- c('GAP123_0pct','GAP123_0_9pct','GAP123_10_19pct','GAP123_20_29pct',
@@ -570,11 +565,124 @@ NHD_protected_table_GAP123[1,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123C
 NHD_protected_table_GAP123[2,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Cat >= 99.5))
 NHD_protected_table_GAP123[1,] <- round(NHD_protected_table_GAP123[1,], 4) #round off first row
 
+# GAPS 1-2, watershed
+NHD_protected_table_GAP12_Ws <- data.frame(matrix(nrow=2, ncol=12))
+colnames(NHD_protected_table_GAP12_Ws) <- c('GAP12_0pct','GAP12_0_9pct','GAP12_10_19pct','GAP12_20_29pct',
+                                            'GAP12_30_39pct','GAP12_40_49pct','GAP12_50_59pct','GAP12_60_69pct',
+                                            'GAP12_70_79pct','GAP12_80_89pct','GAP12_90_99pct','GAP12_100pct')
+rownames(NHD_protected_table_GAP12_Ws) <- c('pct_lakes','nlakes')
+NHD_protected_table_GAP12_Ws[1,1] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws ==0))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,1] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws ==0))
+NHD_protected_table_GAP12_Ws[1,2] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws > 0 & PctGAP_Status12Ws < 9.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,2] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws > 0 & PctGAP_Status12Ws < 9.5))
+NHD_protected_table_GAP12_Ws[1,3] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 9.5 & PctGAP_Status12Ws < 19.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,3] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 9.5 & PctGAP_Status12Ws < 19.5))
+NHD_protected_table_GAP12_Ws[1,4] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 19.5 & PctGAP_Status12Ws < 29.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,4] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 19.5 & PctGAP_Status12Ws < 29.5))
+NHD_protected_table_GAP12_Ws[1,5] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 29.5 & PctGAP_Status12Ws < 39.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,5] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 29.5 & PctGAP_Status12Ws < 39.5))
+NHD_protected_table_GAP12_Ws[1,6] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 39.5 & PctGAP_Status12Ws < 49.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,6] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 39.5 & PctGAP_Status12Ws < 49.5))
+NHD_protected_table_GAP12_Ws[1,7] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 49.5 & PctGAP_Status12Ws < 59.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,7] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 49.5 & PctGAP_Status12Ws < 59.5))
+NHD_protected_table_GAP12_Ws[1,8] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 59.5 & PctGAP_Status12Ws < 69.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,8] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 59.5 & PctGAP_Status12Ws < 69.5))
+NHD_protected_table_GAP12_Ws[1,9] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 69.5 & PctGAP_Status12Ws < 79.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,9] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 69.5 & PctGAP_Status12Ws < 79.5))
+NHD_protected_table_GAP12_Ws[1,10] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 79.5 & PctGAP_Status12Ws < 89.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,10] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 79.5 & PctGAP_Status12Ws < 89.5))
+NHD_protected_table_GAP12_Ws[1,11] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 89.5 & PctGAP_Status12Ws < 99.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,11] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 89.5 & PctGAP_Status12Ws < 99.5))
+NHD_protected_table_GAP12_Ws[1,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 99.5))/nrow(NHD_pts)
+NHD_protected_table_GAP12_Ws[2,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status12Ws >= 99.5))
+NHD_protected_table_GAP12_Ws[1,] <- round(NHD_protected_table_GAP12_Ws[1,], 4) #round off first row
+
+# GAPS 1-3, watershed
+NHD_protected_table_GAP123_Ws <- data.frame(matrix(nrow=2, ncol=12))
+colnames(NHD_protected_table_GAP123_Ws) <- c('GAP123_0pct','GAP123_0_9pct','GAP123_10_19pct','GAP123_20_29pct',
+                                             'GAP123_30_39pct','GAP123_40_49pct','GAP123_50_59pct','GAP123_60_69pct',
+                                             'GAP123_70_79pct','GAP123_80_89pct','GAP123_90_99pct','GAP123_100pct')
+rownames(NHD_protected_table_GAP123_Ws) <- c('pct_lakes','nlakes')
+NHD_protected_table_GAP123_Ws[1,1] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws ==0))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,1] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws ==0))
+NHD_protected_table_GAP123_Ws[1,2] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws > 0 & PctGAP_Status123Ws < 9.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,2] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws > 0 & PctGAP_Status123Ws < 9.5))
+NHD_protected_table_GAP123_Ws[1,3] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 9.5 & PctGAP_Status123Ws < 19.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,3] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 9.5 & PctGAP_Status123Ws < 19.5))
+NHD_protected_table_GAP123_Ws[1,4] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 19.5 & PctGAP_Status123Ws < 29.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,4] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 19.5 & PctGAP_Status123Ws < 29.5))
+NHD_protected_table_GAP123_Ws[1,5] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 29.5 & PctGAP_Status123Ws < 39.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,5] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 29.5 & PctGAP_Status123Ws < 39.5))
+NHD_protected_table_GAP123_Ws[1,6] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 39.5 & PctGAP_Status123Ws < 49.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,6] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 39.5 & PctGAP_Status123Ws < 49.5))
+NHD_protected_table_GAP123_Ws[1,7] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 49.5 & PctGAP_Status123Ws < 59.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,7] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 49.5 & PctGAP_Status123Ws < 59.5))
+NHD_protected_table_GAP123_Ws[1,8] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 59.5 & PctGAP_Status123Ws < 69.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,8] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 59.5 & PctGAP_Status123Ws < 69.5))
+NHD_protected_table_GAP123_Ws[1,9] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 69.5 & PctGAP_Status123Ws < 79.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,9] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 69.5 & PctGAP_Status123Ws < 79.5))
+NHD_protected_table_GAP123_Ws[1,10] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 79.5 & PctGAP_Status123Ws < 89.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,10] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 79.5 & PctGAP_Status123Ws < 89.5))
+NHD_protected_table_GAP123_Ws[1,11] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 89.5 & PctGAP_Status123Ws < 99.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,11] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 89.5 & PctGAP_Status123Ws < 99.5))
+NHD_protected_table_GAP123_Ws[1,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 99.5))/nrow(NHD_pts)
+NHD_protected_table_GAP123_Ws[2,12] <- nrow(subset(PADUS_LakeCat, PctGAP_Status123Ws >= 99.5))
+NHD_protected_table_GAP123_Ws[1,] <- round(NHD_protected_table_GAP123_Ws[1,], 4) #round off first row
+
+# combine into histo-like table (ones without cat or ws are cat)
+histo_like_table <- data.frame(Pct0=NA, Pct0_9=NA, Pct10_19=NA, Pct20_29=NA, Pct30_39=NA, Pct40_49=NA, Pct50_59=NA,
+                               Pct60_69=NA, Pct70_79=NA, Pct80_89=NA, Pct90_99=NA, Pct100=NA)
+
+histo_like_table[1,] <- NHD_protected_table_GAP12[1,]
+histo_like_table[2,] <- NHD_protected_table_GAP12_Ws[1,]
+histo_like_table[3,] <- NHD_protected_table_GAP123[1,]
+histo_like_table[4,] <- NHD_protected_table_GAP123_Ws[1,]
+rownames(histo_like_table) <- c('GAPS1-2, Cat','GAPS1-2, Ws','GAPS1-3, Cat','GAPS1-3, Ws')
+#write.csv(histo_like_table, file='Data/lake_protection_histogram_table.csv')
+
 # Do protected local catchments tend to have protected watersheds? 
 par(mfrow=c(1,1))
 plot(PADUS_LakeCat$PctGAP_Status12Cat ~ PADUS_LakeCat$PctGAP_Status12Ws, pch=20, main='GAPS 1-2', xlab='Ws', ylab='Cat')
 plot(PADUS_LakeCat$PctGAP_Status123Cat ~ PADUS_LakeCat$PctGAP_Status123Ws, pch=20, main='GAPS 1-3', xlab='Ws', ylab='Cat')
 
+### Create summary table of 5th, 50th and 95th percentiles of protected vs. unprotected lakes so can compare distributions
+# based on 100% protection threshold that is built into very custom (AKA inflexible) function
+# helps populate a very data-compact table line by line below
+yo_percentiles <- c(0.05,0.50,0.95) #designate the percentiles to calculate for each variable
+
+# create empty data frame
+variable_list <- c('LakeArea_km2','MaxDepth_m','DrainageArea_km2','TWI','MeanElevation_m','MeanPrecip_mm','MeanTemp_C',
+                   'TotalForest_pct','TotalConif_pct','TotalAg_pct','TotalWetland_pct','RoadDensity_km/km2','Impervious_pct',
+                   'Mines_km','SNDEP_kg/ha/yr','NPDES_km2','Superfund_km2','ToxicRI_km2','AreaBurned_pct','ForestLoss_pct',
+                   'BFI_pct','Dams_km2','Runoff_mm/month')
+pro_unpro_summary <- data.frame(Variable=variable_list, Cat_GAP12=NA, Ws_GAP12=NA, Cat_GAP123=NA, Ws_GAP123=NA)
+
+# fill in rows
+pro_unpro_summary[1,] <- protected_unprotected_percentiles100(PADUS_NHD, variable_list[1], 'AREASQKM','AREASQKM',yo_percentiles, 2) 
+pro_unpro_summary[2,] <- protected_unprotected_percentiles100(PADUS_NHD_maxdepth, variable_list[2], 'MaxDepth','MaxDepth',yo_percentiles, 2) 
+pro_unpro_summary[3,] <- protected_unprotected_percentiles100(PADUS_NHD, variable_list[3], 'CatAreaSqKm','WsAreaSqKm',yo_percentiles, 2) 
+pro_unpro_summary[4,] <- protected_unprotected_percentiles100(PADUS_WetIndex, variable_list[4], 'WetIndexCat','WetIndexWs',yo_percentiles, 2) 
+pro_unpro_summary[5,] <- protected_unprotected_percentiles100(PADUS_elevation, variable_list[5], 'ElevCat','ElevWs',yo_percentiles, 2) 
+pro_unpro_summary[6,] <- protected_unprotected_percentiles100(PADUS_PRISM, variable_list[6], 'Precip8110Cat','Precip8110Ws',yo_percentiles, 2) 
+pro_unpro_summary[7,] <- protected_unprotected_percentiles100(PADUS_PRISM, variable_list[7], 'Tmean8110Cat','Tmean8110Ws',yo_percentiles, 2) 
+pro_unpro_summary[8,] <- protected_unprotected_percentiles100(PADUS_NLCD2011, variable_list[8], 'PctTotalForest2011Cat','PctTotalForest2011Ws',yo_percentiles, 2) 
+pro_unpro_summary[9,] <- protected_unprotected_percentiles100(PADUS_NLCD2011, variable_list[9], 'PctConif2011Cat','PctConif2011Ws',yo_percentiles, 2) 
+pro_unpro_summary[10,] <- protected_unprotected_percentiles100(PADUS_NLCD2011, variable_list[10], 'PctTotalAg2011Cat','PctTotalAg2011Ws',yo_percentiles, 2)
+pro_unpro_summary[11,] <- protected_unprotected_percentiles100(PADUS_NLCD2011, variable_list[11], 'PctTotalWetland2011Cat','PctTotalWetland2011Ws',yo_percentiles, 2) 
+pro_unpro_summary[12,] <- protected_unprotected_percentiles100(PADUS_RoadDensity, variable_list[12], 'RdDensCat','RdDensWs',yo_percentiles, 2) 
+pro_unpro_summary[13,] <- protected_unprotected_percentiles100(PADUS_Impervious, variable_list[13], 'PctImp2011Cat','PctImp2011Ws',yo_percentiles, 2)
+pro_unpro_summary[14,] <- protected_unprotected_percentiles100(PADUS_Mines, variable_list[14], 'MineDensCat','MineDensWs',yo_percentiles, 2)
+pro_unpro_summary[15,] <- protected_unprotected_percentiles100(PADUS_Deposition, variable_list[15], 'SN_2008Cat','SN_2008Ws',yo_percentiles, 2)
+pro_unpro_summary[16,] <- protected_unprotected_percentiles100(PADUS_Toxic, variable_list[16], 'NPDESDensCat','NPDESDensWs',yo_percentiles, 2)
+pro_unpro_summary[17,] <- protected_unprotected_percentiles100(PADUS_Toxic, variable_list[17], 'SuperfundDensCat','SuperfundDensWs',yo_percentiles, 2) 
+pro_unpro_summary[18,] <- protected_unprotected_percentiles100(PADUS_Toxic, variable_list[18], 'TRIDensCat','TRIDensWs',yo_percentiles, 2)
+pro_unpro_summary[19,] <- protected_unprotected_percentiles100(PADUS_Fahr, variable_list[19], 'TotalPctFireCat','TotalPctFireWs',yo_percentiles, 2)
+pro_unpro_summary[20,] <- protected_unprotected_percentiles100(PADUS_ForestLoss, variable_list[20], 'TotalPctFrstLossCat','TotalPctFrstLossWs',yo_percentiles, 2)
+pro_unpro_summary[21,] <- protected_unprotected_percentiles100(PADUS_baseflow, variable_list[21], 'BFICat','BFIWs',yo_percentiles, 2)
+pro_unpro_summary[22,] <- protected_unprotected_percentiles100(PADUS_Dams, variable_list[22], 'NABD_DensCat','NABD_DensWs',yo_percentiles, 2)
+pro_unpro_summary[23,] <- protected_unprotected_percentiles100(PADUS_runoff, variable_list[23], 'RunoffCat','RunoffWs',yo_percentiles, 2)
+
+write.csv(pro_unpro_summary, file='Data/Protected_vs_unprotected_lakes_100pct.csv')
 
 ##### Comparing protected vs. unprotected lakes (using different definitions of "protected") based on % watershed protected
 # exploratory boxplots and t-tests (functions analyze both Gaps 1-2 and Gaps 1-3 separately)
