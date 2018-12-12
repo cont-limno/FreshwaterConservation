@@ -1,6 +1,6 @@
 ####################### Lake protection by US state and NARS ecoregion #########################
 # Date: 12-5-18
-# updated:
+# updated: 12-12-18
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -158,6 +158,7 @@ protected_lakes_by_NARS <- function(NHD_pts_lakes_PADUS, NARS_regions, protectio
 ############################ Main program #####################################
 ## Number and proportion of protected lakes per state
 NHD_pts_lakes_PADUS <- merge(NHD_pts_lakes, PADUS_table, by='COMID', all=F)
+NHD_pts_lakes_PADUS <- subset(NHD_pts_lakes_PADUS, AREASQKM >= 0.01) #remove lakes smaller than 1 ha
 
 # calculate total protection for GAPS 1-2 and GAPS 1-3
 NHD_pts_lakes_PADUS$PctGAP_Status12Cat <- NHD_pts_lakes_PADUS$PctGAP_Status1Cat + NHD_pts_lakes_PADUS$PctGAP_Status2Cat
@@ -340,7 +341,7 @@ barplot_df_Ws <- data.frame(State=LakeProtection_byState$State, PP75=LakeProtect
 melted <- melt(barplot_df_Ws, id.vars='State')
 
 # with help from: https://stackoverflow.com/questions/20349929/stacked-bar-plot-in-r
-#png('C:/Ian_GIS/FreshwaterConservation/ProtectedAreas_paper_figs/LakeProtectionByState_Ws.png',width = 7.5,height = 4.75,units = 'in',res=300)
+png('C:/Ian_GIS/FreshwaterConservation/ProtectedAreas_paper_figs/LakeProtectionByState_Cat.png',width = 7.5,height = 4.75,units = 'in',res=300)
 ggplot(melted, aes(x = State, y = value, fill = variable)) + 
   geom_bar(stat = "identity") +
   xlab("") +
@@ -354,7 +355,7 @@ ggplot(melted, aes(x = State, y = value, fill = variable)) +
                     labels=c('75%','90%','100%'))+
   theme(legend.position=c(0.95,0.85))+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
-#dev.off()
+dev.off()
 
 #### Same analysis, but by NARS ecoregions
 
