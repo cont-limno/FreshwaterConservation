@@ -395,7 +395,7 @@ LakeProtection_byRegion_Export <- data.frame(region=LakeProtection_byRegion$Regi
 
 #write.csv(LakeProtection_byRegion_Export, file='Data/LakeProtection_byNARSRegion.csv')
 
-# Barplots of lake protection by state
+# Barplots of lake protection by region
 barplot_df <- data.frame(Region=LakeProtection_byRegion$Region, PP75=LakeProtection_byRegion$PPCat_12_75, PP90=LakeProtection_byRegion$PPCat_12_90, PP100=LakeProtection_byRegion$PPCat_12_100)
 melted <- melt(barplot_df, id.vars='Region')
 

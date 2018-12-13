@@ -1,6 +1,6 @@
 ####################### LakeCat protected area analysis ########################################
 # Date: 11-26-18
-# updated: 12-12-18
+# updated: 12-13-18
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -161,6 +161,33 @@ PADUS_ForestLoss <- subset(PADUS_ForestLoss, COMID %in% COMID_1ha_above)
 # Climate
 PADUS_PRISM <- full_join(PADUS_LakeCat, PRISM, by='COMID') 
 PADUS_PRISM <- subset(PADUS_PRISM, COMID %in% COMID_1ha_above)
+
+#### create master table of desired variables
+a <- PADUS_NHD[,c('COMID','CatAreaSqKm','WsAreaSqKm','PctGAP_Status12Cat','PctGAP_Status123Cat',
+                  'PctGAP_Status12Ws','PctGAP_Status123Ws','ProtectGAP12Cat_75','ProtectGAP123Cat_75',
+                  'ProtectGAP12Cat_90','ProtectGAP123Cat_90','ProtectGAP12Cat_100','ProtectGAP123Cat_100',
+                  'ProtectGAP12Ws_75','ProtectGAP123Ws_75','ProtectGAP12Ws_90','ProtectGAP123Ws_90',
+                  'ProtectGAP12Ws_100','ProtectGAP123Ws_100','AREASQKM','MaxDepth')]
+b <- PADUS_elevation[,c('COMID','ElevCat','ElevWs')]
+c <- PADUS_WetIndex[,c('COMID','WetIndexCat','WetIndexWs')]
+d <- PADUS_NLCD2011[,c('COMID','PctTotalForest2011Cat','PctTotalAg2011Cat','PctTotalWetland2011Cat','PctConif2011Cat',
+                       'PctTotalForest2011Ws','PctTotalAg2011Ws','PctTotalWetland2011Ws','PctConif2011Ws')]
+e <- PADUS_RoadDensity[,c('COMID','RdDensCat','RdDensWs')]
+f <- PADUS_Impervious[,c('COMID','PctImp2011Cat','PctImp2011Ws')]
+g <- PADUS_Mines[,c('COMID','MineDensCat','MineDensWs')]
+h <- PADUS_Dams[,c('COMID','NABD_DensCat','NABD_DensWs')]
+i <- PADUS_runoff[,c('COMID','RunoffCat','RunoffWs')]
+j <- PADUS_baseflow[,c('COMID','BFICat','BFIWs')]
+k <- PADUS_Toxic[,c('COMID','NPDESDensCat','SuperfundDensCat','TRIDensCat','NPDESDensWs','SuperfundDensWs','TRIDensWs')]
+l <- PADUS_Deposition[,c('COMID','SN_2008Cat','SN_2008Ws')]
+m <- PADUS_Fahr[,c('COMID','TotalPctFireCat','TotalPctFireWs')]
+n <- PADUS_ForestLoss[,c('COMID','TotalPctFrstLossCat','TotalPctFrstLossWs')]
+o <- PADUS_PRISM[,c('COMID','Precip8110Cat','Tmean8110Cat','Precip8110Ws','Tmean8110Ws')]
+xx <- Reduce(function(...) merge(..., all=T), list(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o))
+Cat_table <- xx[,c(1,4,5,8,9,10,11,12,13,2,20:22,24,26:29,34,36,38,40,42,44,46:48,52,54,56,58,59)]
+Ws_table <- xx[,c(1,6,7,14:19,3,20,21,23,25,30:33,35,37,39,41,43,45,49:51,53,55,57,60,61)]
+#write.csv(Cat_table, file="Data/Nick/catchment_table.csv")
+#write.csv(Ws_table, file="Data/Nick/watershed_table.csv")
 
 #### Get correlations between % protected and various predictors ##
 ## Lake morphometry
