@@ -1,6 +1,6 @@
 ####################### Extract/wrangle LAGOS freshwater connectivity metrics ##################
 # Date: 12-4-18
-# updated:
+# updated: 12-15-15
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -37,10 +37,15 @@ shoreline_wetlands_df <- subset(shoreline_wetlands_df, lagoslakeid %in% mich_lag
 shoreline_wetlands_df <- merge(shoreline_wetlands_df, perim_df, by='lagoslakeid')
 shoreline_wetlands_df$shoreline_wetlands_pct <- (shoreline_wetlands_df$shoreline_wetlands_km*1000)/shoreline_wetlands_df$perimeter_m
 
+### IWS LULC variables
+iws_lulc_df <- dt$iws.lulc[,c('lagoslakeid','iws_damdensity_pointsperha')]
+iws_lulc_df <- subset(iws_lulc_df, lagoslakeid %in% mich_lagoslakeids)
+
 ##### create overall merged table #####
 big_mama_df <- merge(iws_conn_df, buff500_conn_df, by='lagoslakeid')
 big_mama_df <- merge(big_mama_df, shoreline_wetlands_df[,c('lagoslakeid','shoreline_wetlands_pct')], by='lagoslakeid')
-#write.csv(big_mama_df, "Data/Michigan_LAGOS_conn_metrics.csv")
+big_mama_df <- merge(big_mama_df, iws_lulc_df, by='lagoslakeid')
+write.csv(big_mama_df, "Data/Michigan_LAGOS_conn_metrics.csv")
 
 #### basic plots
 par(mfrow=c(2,3))
@@ -50,6 +55,7 @@ hist(big_mama_df$iws_wl_allwetlandsdissolved_overlapping_area_pct, main='IWS wet
 hist(big_mama_df$iws_wl_connectedwetlandsundissolved_overlapping_area_pct, main='IWS connected wetlands pct', xlab='')
 hist(big_mama_df$buffer500m_streamdensity_streams_density_mperha, main='Buff 500m stream density', xlab='')
 hist(big_mama_df$shoreline_wetlands_pct, main='Shoreline wetland %', xlab='')
+hist(big_mama_df$iws_damdensity_pointsperha)
 
 # are aquatic conn variables correlated?
 # could eliminate some redundant variables
