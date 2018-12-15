@@ -37,5 +37,5 @@ ff_ProtectGAP12Cat_75 = forestFloor(
 
 Col=fcol(ff_ProtectGAP12Cat_75,1,orderByImportance=T, alpha=.3)
 
-plot(ff_ProtectGAP12Cat_75,plot_seq = c(1:12),col=Col,plot_GOF=F,orderByImportance=TRUE, limitY=F) 
+plot(ff_ProtectGAP12Cat_75,plot_seq = c(1:4),plot_GOF=F,orderByImportance=TRUE, limitY=F) 
 
