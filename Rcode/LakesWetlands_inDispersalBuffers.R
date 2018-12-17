@@ -47,10 +47,26 @@ dispersal_buff <- 2020 #meters from Patrick et al. (2012) for common snapping tu
 #Patrick, D. A., Gibbs, J. P., Popescu, V. D., & Nelson, D. A. (2012). Multi-scale habitat-resistance models for predicting road mortality "hotspots" for turtles and amphibians. 
 #Herpetological Conservation and Biology, 7(3), 407-426.
 
+# loop took almost 2 days
 for (i in 1:length(mich_lagoslakeids)){
   tump <- lake_dispersal_buffer_patch_metrics(lagoslakeid=mich_lagoslakeids[i], LAGOS_shp=lakes_4ha_poly, NHD_shp=mich_lakes_NHD_sub, wetland_shp=mich_NWI, dispersal_buff=dispersal_buff)
   LakeBufferPatchStatz[i,] <- tump
   tump <- NULL
 }
 
-write.csv(LakeBufferPatchStatz, file="Data/LakeWetlandPatchStats_2020mBuff")
+# correct negative lake metric values that arose from subtracting focal lake perimeter (convert negatives to 0)
+LakeBufferPatchStatz$LakeEdge_km <- ifelse(LakeBufferPatchStatz$LakeEdge_km < 0, 0, LakeBufferPatchStatz$LakeEdge_km)
+LakeBufferPatchStatz$LakeEdgeArea_ha <- ifelse(LakeBufferPatchStatz$LakeEdgeArea_ha < 0, 0, LakeBufferPatchStatz$LakeEdgeArea_ha)
+LakeBufferPatchStatz$LakeEdgeArea_pct <- ifelse(LakeBufferPatchStatz$LakeEdgeArea_pct < 0, 0, LakeBufferPatchStatz$LakeEdgeArea_pct)
+
+#write.csv(LakeBufferPatchStatz, file="Data/LakeWetlandPatchStats_2020mBuff.csv")
+
+par(mfrow=c(2,3))
+hist(LakeBufferPatchStatz$nLakePatches)
+hist(LakeBufferPatchStatz$LakeEdge_km)
+hist(LakeBufferPatchStatz$LakeEdgeArea_ha)
+hist(LakeBufferPatchStatz$LakeEdgeArea_pct)
+hist(LakeBufferPatchStatz$nWetlandPatches)
+hist(LakeBufferPatchStatz$WetlandEdge_km)
+hist(LakeBufferPatchStatz$WetlandArea_ha)
+hist(LakeBufferPatchStatz$WetlandArea_pct)
