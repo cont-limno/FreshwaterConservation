@@ -18,7 +18,7 @@ dat$MaxDepth[dat$MaxDepth<0]<-NA
 dat_rf<-dat[complete.cases(dat[,c(4:length(dat))]),][,4:length(dat)]
 
 #running random forest, correcting class imbalance
-RF_ProtectGAP12Cat_75<-randomForest(x = dat_rf[,7:50], y = dat_rf[,4],keep.inbag = T, keep.forest = T, ntree=100, importance=T,strata=dat_rf[,4],sampsize=c(10000,10000)) 
+RF_ProtectGAP12Cat_75<-randomForest(x = dat_rf[,7:50], y = dat_rf[,4],keep.inbag = T, keep.forest = T, ntree=1000, importance=T,strata=dat_rf[,4],sampsize=c(10000,10000)) 
 
 RF_ProtectGAP12Cat_75
 varImpPlot(RF_ProtectGAP12Cat_75)
