@@ -15,6 +15,7 @@ dat$MaxDepth[dat$MaxDepth<0]<-NA
 #removing NA values from all rows. 
 dat_log<-dat[complete.cases(dat[,c(4:length(dat))]),][,4:length(dat)]
 
+#logistic regression for each covariate and response, and filling in a table reporting the results
 logistic_coef<-data.frame()
 for (j in 1:6){
 for ( i in 7:50){
@@ -32,6 +33,7 @@ logistic_coef<-rbind(logistic_coef,data.frame(response=response,covariate=covari
 }
 }
 
+#plotting the coefficient estimates for each logistic model
 responses<-as.character(unique(logistic_coef$response))
 for (j in 1:length(responses)){
   
