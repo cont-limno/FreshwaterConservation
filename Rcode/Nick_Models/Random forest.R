@@ -56,8 +56,8 @@ for (j in 1:6){
 } 
 
 
+#exporting the model goodness of fit/error measures
 rf_predictions<-data.frame()
-
 for (j in 1:6){
   rf.roc<-roc(dat_rf[,j],RF_list[[j]]$votes[,2])
   positive_cat<-as.character(unique(dat_rf[,j])[grep("Unprotected",unique(dat_rf[,j]))])
