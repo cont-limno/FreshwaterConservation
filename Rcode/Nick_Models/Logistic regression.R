@@ -41,7 +41,7 @@ covs_order = factor(plot_dat$covariate, levels=unique(plot_dat$covariate[order(p
 
 plot_dat$covs_order<-covs_order
 
-plot<-ggplot(data=plot_dat) + geom_point(aes(x=covs_order, y=coef)) + geom_errorbar(aes(x=covs_order, ymin=coef-se, ymax=coef+se)) + geom_hline(yintercept=0) + theme_classic() + scale_y_continuous("Scaled Coeficient")+ scale_x_discrete("")+ theme(axis.text.x = element_text(angle = 70, hjust = 1)) + ggtitle(responses[j])
+plot<-ggplot(data=plot_dat) + geom_point(aes(x=covs_order, y=coef)) + geom_errorbar(aes(x=covs_order, ymin=coef-se, ymax=coef+se)) + geom_hline(yintercept=0) + theme_classic() + scale_y_continuous("Scaled Coefficient")+ scale_x_discrete("")+ theme(axis.text.x = element_text(angle = 70, hjust = 1)) + ggtitle(responses[j])
 
 ggsave(filename=paste(responses[j],".png", sep=""),plot=plot, path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic_Regression",device="png",width=6.5, height=4.5, dpi=300, units="in" )
 
