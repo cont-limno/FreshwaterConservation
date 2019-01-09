@@ -1,6 +1,6 @@
 ####################### Classifying US lakes based on LAGOS and LakeCat ########################
 # Date: 1-7-19
-# updated: 
+# updated: 1-9-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -14,6 +14,7 @@ library(clustMixType)
 #library(NbClust)
 library(reshape2)
 library(gridExtra)
+library(rgdal)
 
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
@@ -174,55 +175,97 @@ big_mama_table <- big_mama_table[complete.cases(big_mama_table),] #trivial numbe
 # with help from: https://www.kaggle.com/rahultej/k-prototypes-correlation-randomforest 
 
 # subset overall dataset to test cluster method
-set.seed(87)
-baby <- sample_n(big_mama_table, size=100000, replace=F) #create random sample subset for testing tree
+#set.seed(87)
+#baby <- sample_n(big_mama_table, size=100000, replace=F) #create random sample subset for testing tree
 var_list <- c('COMID','CatAreaSqKm','AREASQKM','ElevCat','WetIndexCat','PctConif2011Cat','PctTotalWetland2011Cat',
               'RunoffCat','BFICat','Precip8110Cat','Tmean8110Cat','SDF','LandForm')
-baby <- baby[,c(var_list)]
+#baby <- baby[,c(var_list)]
+full_cluster_data <- big_mama_table[,c(var_list)]
 
-cor(baby[,2:(ncol(baby)-1)], method='pearson')
-
+#cor(baby[,2:(ncol(baby)-1)], method='pearson')
+cor(full_cluster_data[,2:(ncol(full_cluster_data)-1)], method='pearson')
 #gower_dist <- daisy(baby[,2:ncol(baby)], metric='gower')
+
+# need to log-transform any variables?
+
+par(mfrow=c(2,3))
+for (i in 2:(length(var_list)-2)){
+   hist(full_cluster_data[,i], main=names(full_cluster_data[i]), las=1)
+ }
+
+par(mfrow=c(2,3))
+for (i in 2:(length(var_list)-2)){
+  hist(log(full_cluster_data[,i]), main=names(full_cluster_data[i]), las=1)
+}
+
+par(mfrow=c(1,2))
+for (i in 2:(length(var_list)-2)){
+  hist(full_cluster_data[,i], main=names(full_cluster_data[i]), las=1)
+  hist(log(full_cluster_data[,i]), main=names(full_cluster_data[i]), las=1)
+}
+
+# could try logging: total wetland, coniferous, elevation, cat area, lake area, runoff
+log_cluster_data <- full_cluster_data
+log_cluster_data$CatAreaSqKm_log <- log(log_cluster_data$CatAreaSqKm)
+log_cluster_data$AREASQKM_log <- log(log_cluster_data$AREASQKM)
+#log_cluster_data$PctTotalWetland2011Cat_log <- log(log_cluster_data$PctTotalWetland2011Cat)
+#log_cluster_data$PctConif2011Cat_log <- log(log_cluster_data$PctConif2011Cat)
+#log_cluster_data$ElevCat_log <- log(log_cluster_data$ElevCat)
+#log_cluster_data$RunoffCat_log <- log(log_cluster_data$RunoffCat)
+log_cluster_data$SDF_log <- log(log_cluster_data$SDF)
+log_cluster_data <- log_cluster_data[complete.cases(log_cluster_data),]
+#log_cluster_data[,2:(length(var_list)-2)] <- log_cluster_data[,2:(length(var_list)-2)][!is.infinite(rowSums(log_cluster_data[,2:(length(var_list)-2)])),]
+
+var_list <- c('COMID','CatAreaSqKm_log','AREASQKM_log','ElevCat','WetIndexCat','PctConif2011Cat','PctTotalWetland2011Cat',
+              'RunoffCat','BFICat','Precip8110Cat','Tmean8110Cat','SDF_log','LandForm')
+log_cluster_data <- log_cluster_data[,c(var_list)]
 
 # check optimal number of clusters
 wss<-vector()
-for (i in 2:15){ wss[i] <- sum(kproto(baby[,2:ncol(baby)], i)$withinss)}
+#for (i in 2:15){ wss[i] <- sum(kproto(baby[,2:ncol(baby)], i)$withinss)}
+#for (i in 2:15){ wss[i] <- sum(kproto(full_cluster_data[,2:ncol(full_cluster_data)], i)$withinss)}
+for (i in 2:15){ wss[i] <- sum(kproto(log_cluster_data[,2:ncol(log_cluster_data)], i)$withinss)}
 par(mfrow=c(1,1))
 plot(1:15, wss, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares",
-     main="Assessing the Optimal Number of Clusters with the Elbow Method",
+     main="Elbow Method",
      pch=20)
 
 # can also use NbClust
-# but dissimilarity matrix is too large with large datasets
+# but dissimilarity matrix is too large with large datasets (memory overload)
 #NbClust(data=baby[,2:ncol(baby)], diss=gower_dist, distance=NULL, min.nc=2, max.nc=15, method='ward.D', index='ratkowsky')
 
 # run with 10 clusters for now
 k=10
-k=7
-kpres <- kproto(baby[,2:ncol(baby)], k=k)
+#k=7
+#kpres <- kproto(baby[,2:ncol(baby)], k=k)
+#kpres <- kproto(full_cluster_data[,2:ncol(full_cluster_data)], k=k)
+kpres <- kproto(log_cluster_data[,2:ncol(log_cluster_data)], k=k)
 hist(kpres$cluster)
 cluster_means <- kpres$centers
 cluster_means$cluster <- seq(1,k,1)
 cluster_means <- cluster_means[,c(ncol(cluster_means),1:(ncol(cluster_means)-1))]
 
 # barplots of cluster means by explanatory variable
-for (i in 1:(length(var_list)-2)){
-  barplot(cluster_means[,i], main=names(cluster_means[i]), names.arg=seq(1,k,1), xlab='Cluster', las=1)
-}
+# for (i in 1:(length(var_list)-2)){
+#   barplot(cluster_means[,i], main=names(cluster_means[i]), names.arg=seq(1,k,1), xlab='Cluster', las=1)
+# }
 
 cluster_summary <- summary(kpres)
-cluster_members <- baby
+#cluster_members <- baby
+cluster_members <- full_cluster_data
 cluster_members$cluster <- kpres$cluster
 cluster_members$clusterFac <- as.factor(cluster_members$cluster)
 
-for (i in 1:(length(var_list)-2)){
-  boxplot(cluster_members[,i] ~ cluster_members$clusterFac, las=1, xlab='cluster', main=names(cluster_members[i]))
-}
+# for (i in 1:(length(var_list)-2)){
+#   boxplot(cluster_members[,i] ~ cluster_members$clusterFac, las=1, xlab='cluster', main=names(cluster_members[i]))
+# }
 
 # map clusters
 # mapping by cluster number
-kdf <- data.frame(cluster=kpres$cluster,COMID=baby$COMID)
+#kdf <- data.frame(cluster=kpres$cluster,COMID=baby$COMID)
+#kdf <- data.frame(cluster=kpres$cluster,COMID=full_cluster_data$COMID)
+kdf <- data.frame(cluster=kpres$cluster,COMID=log_cluster_data$COMID)
 
 # append data to shapefile first
 k_shp <- merge(NHD_pts, kdf, by='COMID', all.x=F)
@@ -232,7 +275,8 @@ k_map_df$xCor <- k_shp@coords[,1]
 k_map_df$yCor <- k_shp@coords[,2]
 
 # this ggplot is imperfect, but it gets the job done for exploration
-map_colors <- c('firebrick','dodgerblue','orange','darkgreen','gray60','gold','black','hotpink','springgreen2','slateblue2')
+#map_colors <- c('firebrick','dodgerblue','orange','darkgreen','gray60','gold','black','hotpink','springgreen2','slateblue2')
+map_colors <- c('lightblue','steelblue','palegreen','forestgreen','salmon','red2','tan1','darkorange1','thistle2','purple4')
 k.point3<-ggplot(k_map_df, aes(x=xCor,y=yCor))+
   geom_point(aes(colour=k_map_df$clusterFac), size=2) +
   ggtitle('K-prototypes clustering')
@@ -248,9 +292,15 @@ k.point3 + geom_path(data=lower48,aes(long,lat,group=group),colour='black') + co
         panel.grid = element_blank(),
         axis.title = element_blank())
 
+dsnname <- "C:/Ian_GIS/LakeCat/Clusters"
+layername <- "kproto_LakeCat_clusters_k10"
+#writeOGR(k_shp, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+
 # oh wow, there are already built-in functions for the boxplots...
 par(mfrow=c(2,3))
-clprofiles_no_legend(kpres, baby[,2:ncol(baby)], col=map_colors)
+#clprofiles_no_legend(kpres, baby[,2:ncol(baby)], col=map_colors)
+#clprofiles_no_legend(kpres, full_cluster_data[,2:ncol(full_cluster_data)], col=map_colors)
+clprofiles_no_legend(kpres, log_cluster_data[,2:ncol(log_cluster_data)], col=map_colors)
 
 ## How do clusters align with protected lakes?
 # Identify protected vs. unprotected lakes based on % thresholds
