@@ -63,7 +63,7 @@ for (j in 1:length(responses)){
   plot_dat_Ws<-gam_results[gam_results$response==responses[j] ,]
   plot_dat_Cat<-gam_results[gam_results$response==responses[j],]
   
-  covs_order = factor(plot_dat$covariate, levels=unique(plot_dat$covariate[order(plot_dat$r2)]), ordered=TRUE)
+  covs_order = factor(plot_dat$covariate, levels=unique(plot_dat$covariate[rev(order(plot_dat$r2))]), ordered=TRUE)
   
   plot_dat$covs_order<-covs_order
   
