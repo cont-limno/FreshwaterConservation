@@ -218,33 +218,58 @@ log_cluster_data <- log_cluster_data[complete.cases(log_cluster_data),]
 
 var_list <- c('COMID','CatAreaSqKm_log','AREASQKM_log','ElevCat','WetIndexCat','PctConif2011Cat','PctTotalWetland2011Cat',
               'RunoffCat','BFICat','Precip8110Cat','Tmean8110Cat','SDF_log','LandForm')
+var_list <- c('COMID','ElevCat','WetIndexCat','PctConif2011Cat','PctTotalWetland2011Cat',
+              'RunoffCat','BFICat','Precip8110Cat','Tmean8110Cat')
 log_cluster_data <- log_cluster_data[,c(var_list)]
 
 # check optimal number of clusters
+#baby <- sample_n(log_cluster_data, size=50000, replace=F) #if need a subset
 wss<-vector()
 #for (i in 2:15){ wss[i] <- sum(kproto(baby[,2:ncol(baby)], i)$withinss)}
 #for (i in 2:15){ wss[i] <- sum(kproto(full_cluster_data[,2:ncol(full_cluster_data)], i)$withinss)}
-for (i in 2:15){ wss[i] <- sum(kproto(log_cluster_data[,2:ncol(log_cluster_data)], i)$withinss)}
+#for (i in 2:15){ wss[i] <- sum(kproto(log_cluster_data[,2:ncol(log_cluster_data)], i)$withinss)}
+for (i in 2:15){ wss[i] <- sum(kmeans(baby[,2:ncol(baby)], i)$withinss)}
 par(mfrow=c(1,1))
 plot(1:15, wss, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares",
      main="Elbow Method",
      pch=20)
 
-# can also use NbClust
+# too much memory for full dataset
+#library(factoextra)
+#fviz_nbclust(log_cluster_data[,2:ncol(log_cluster_data)], kproto, method = "silhouette")
+
+#library(NbClust)
 # but dissimilarity matrix is too large with large datasets (memory overload)
 #NbClust(data=baby[,2:ncol(baby)], diss=gower_dist, distance=NULL, min.nc=2, max.nc=15, method='ward.D', index='ratkowsky')
 
-# run with 10 clusters for now
+# set number of clusters
 k=10
 #k=7
 #kpres <- kproto(baby[,2:ncol(baby)], k=k)
 #kpres <- kproto(full_cluster_data[,2:ncol(full_cluster_data)], k=k)
-kpres <- kproto(log_cluster_data[,2:ncol(log_cluster_data)], k=k)
+#kpres <- kproto(log_cluster_data[,2:ncol(log_cluster_data)], k=k)
+kpres <- kmeans(baby[,2:ncol(baby)], centers=k)
 hist(kpres$cluster)
-cluster_means <- kpres$centers
+cluster_means <- as.data.frame(kpres$centers)
 cluster_means$cluster <- seq(1,k,1)
 cluster_means <- cluster_means[,c(ncol(cluster_means),1:(ncol(cluster_means)-1))]
+
+# Create loop to store cluster analysis outputs (cluster values and means) for different numbers of clusters
+kpres_list <- list()
+cluster_means_list <- list()
+for (i in 3:12){
+  #kprez <- kproto(baby[,2:ncol(baby)], k=i)# testing loop on small sample of data
+  kprez <- kproto(log_cluster_data[,2:ncol(log_cluster_data)], k=i)
+  cluster_meanz <- kprez$centers
+  cluster_meanz$cluster <- seq(1,i,1)
+  cluster_meanz <- cluster_meanz[,c(ncol(cluster_meanz),1:(ncol(cluster_meanz)-1))]
+  kpres_list[[i]] <- kprez$cluster
+  cluster_means_list[[i]] <- cluster_meanz
+  kprez <- NULL
+  cluster_means <- NULL
+}
+
 
 # barplots of cluster means by explanatory variable
 # for (i in 1:(length(var_list)-2)){
@@ -252,8 +277,8 @@ cluster_means <- cluster_means[,c(ncol(cluster_means),1:(ncol(cluster_means)-1))
 # }
 
 cluster_summary <- summary(kpres)
-#cluster_members <- baby
-cluster_members <- full_cluster_data
+cluster_members <- baby
+#cluster_members <- full_cluster_data
 cluster_members$cluster <- kpres$cluster
 cluster_members$clusterFac <- as.factor(cluster_members$cluster)
 
@@ -263,9 +288,9 @@ cluster_members$clusterFac <- as.factor(cluster_members$cluster)
 
 # map clusters
 # mapping by cluster number
-#kdf <- data.frame(cluster=kpres$cluster,COMID=baby$COMID)
+kdf <- data.frame(cluster=kpres$cluster,COMID=baby$COMID)
 #kdf <- data.frame(cluster=kpres$cluster,COMID=full_cluster_data$COMID)
-kdf <- data.frame(cluster=kpres$cluster,COMID=log_cluster_data$COMID)
+#kdf <- data.frame(cluster=kpres$cluster,COMID=log_cluster_data$COMID)
 
 # append data to shapefile first
 k_shp <- merge(NHD_pts, kdf, by='COMID', all.x=F)
@@ -297,10 +322,10 @@ layername <- "kproto_LakeCat_clusters_k10"
 #writeOGR(k_shp, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
 
 # oh wow, there are already built-in functions for the boxplots...
-par(mfrow=c(2,3))
-#clprofiles_no_legend(kpres, baby[,2:ncol(baby)], col=map_colors)
+par(mfrow=c(2,4))
+clprofiles_no_legend(kpres, baby[,2:ncol(baby)], col=map_colors)
 #clprofiles_no_legend(kpres, full_cluster_data[,2:ncol(full_cluster_data)], col=map_colors)
-clprofiles_no_legend(kpres, log_cluster_data[,2:ncol(log_cluster_data)], col=map_colors)
+#clprofiles_no_legend(kpres, log_cluster_data[,2:ncol(log_cluster_data)], col=map_colors)
 
 ## How do clusters align with protected lakes?
 # Identify protected vs. unprotected lakes based on % thresholds
