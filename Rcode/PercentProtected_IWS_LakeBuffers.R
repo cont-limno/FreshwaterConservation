@@ -1,6 +1,6 @@
 #### Calculate percent protected for lake watersheds and snapping turtle dispersal buffers #####
 # Date: 1-3-19
-# updated: 
+# updated: 1-11-18
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -76,4 +76,6 @@ plot(mich_lakes_df$GAP123_IWS_pct ~ mich_lakes_df$GAP123_buff_pct, pch=20)
 cor(mich_lakes_df$GAP12_IWS_pct, mich_lakes_df$GAP12_buff_pct, use='pairwise.complete.obs', method='pearson')
 cor(mich_lakes_df$GAP123_IWS_pct, mich_lakes_df$GAP123_buff_pct, use='pairwise.complete.obs', method='pearson')
 
-
+# save output for use in other analysis
+write.csv(PADUS_IWS, file="Data/PADUS_MI_IWS_pct.csv")
+write.csv(PADUS_buff, file="Data/PADUS_MI_Buff2020m_pct.csv")
