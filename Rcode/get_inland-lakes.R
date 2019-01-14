@@ -101,7 +101,20 @@ is_bad_lake <- function(llid){
 
 # is_bad_lake(llid)
 
-test2 <- sapply(test$lagoslakeid[6:10], function(x){
+sapply(test$lagoslakeid, function(x){
   print(x) 
-  is_bad_lake(x)
+  res <- suppressMessages(suppressWarnings(
+    data.frame("llid" = x, 
+                    "bad_lake" = is_bad_lake(x), stringsAsFactors = FALSE)
+    ))
+  if(x == test$lagoslakeid[1]){
+    write.table(res, file = "Data/connectivity_lakes.csv", append = TRUE, 
+                sep = ",", row.names = FALSE, col.names = TRUE)
+  }else{
+    write.table(res, file = "Data/connectivity_lakes.csv", append = TRUE, 
+                sep = ",", row.names = FALSE, col.names = FALSE)  
+  }
 }) 
+
+res <- read.csv("Data/connectivity_lakes.csv", stringsAsFactors = FALSE)
+# unlink("Data/connectivity_lakes.csv")
