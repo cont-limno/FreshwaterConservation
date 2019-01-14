@@ -85,7 +85,8 @@ is_bad_lake <- function(llid){
       downstream_of_gl <- any(up_network$ftype == "Coastal")
     }else{
       print("No upnetwork streams found in the NHDPlus")
-      downstream_of_gl <- TRUE
+      # set FALSE for now bc this might not mean its a bad lake
+      downstream_of_gl <- FALSE 
     }
   }else{
     downstream_of_gl <- FALSE
@@ -98,12 +99,9 @@ is_bad_lake <- function(llid){
   }
 }
 
-is_bad_lake(llid)
+# is_bad_lake(llid)
 
-test2 <- sapply(test$lagoslakeid[1:5], function(x){
+test2 <- sapply(test$lagoslakeid[6:10], function(x){
   print(x) 
   is_bad_lake(x)
 }) 
-
-# get lakes that only contain flowlines with a "Coastal" FTYPE
-# get flowlines that intersect the boundary of the Michigan landmass 
