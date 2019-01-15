@@ -1,6 +1,6 @@
 ############### Terrestrial and hydrologic lake connectivity indices ###########################
 # Date: 1-3-19
-# updated: 
+# updated: 1-15-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -199,11 +199,6 @@ colnames(hydro_terr_conn_df) <- c('lagoslakeid','PC1and2_hydro','PC1and2_terr','
 hydro_terr_conn_df$hydro_terr <- sqrt((hydro_terr_conn_df$PC1and2_hydro ^2) + (hydro_terr_conn_df$PC1and2and3_terr ^2)) 
 hydro_terr_conn_df <- hydro_terr_conn_df[complete.cases(hydro_terr_conn_df), ]
 
-#library(RColorBrewer)
-colorz <- brewer.pal(9, name='GnBu')[hydro_terr_conn_df$hydro_terr]
-#colorz <- divPalette(10, "RdBu")[round(hydro_terr_conn_df$hydro_terr)]
-breaks <- c(0,2,4,6,8,10,20)
-hydro_terr_conn_df$colorz <- cut(hydro_terr_conn_df$hydro_terr, breaks=c(quantile(hydro_terr_conn_df$hydro_terr)), labels=c('0-25','25-50','50-75','75-100'), right=F)
 
 dev.new(width=4, height=4)
 par(mfrow=c(1,1))
@@ -212,15 +207,6 @@ plot(PC1and2_hydro ~ PC1and2and3_terr, data=hydro_terr_conn_df, pch=16, xlim=c(0
 abline(0,1)
 corplot <- cor(hydro_terr_conn_df$PC1and2_hydro, hydro_terr_conn_df$PC1and2and3_terr, method='pearson', use='pairwise.complete.obs')
 legend('bottomright', legend=paste0("r = ", round(corplot, 3)), bty='n')
-
-# something wrong with color assignments here
-# par(mfrow=c(1,1))
-# plot(PC1and2_hydro ~ PC1and2and3_terr, data=hydro_terr_conn_df, pch=16, xlim=c(0,10), ylim=c(0,10), col=colorz,
-#      xlab='Terrestrial', ylab='Hydrologic')
-# abline(0,1)
-# corplot <- cor(hydro_terr_conn_df$PC1and2_hydro, hydro_terr_conn_df$PC1and2and3_terr, method='pearson', use='pairwise.complete.obs')
-# legend('bottomright', legend=paste0("r = ", round(corplot, 3)), bty='n')
-# legend('topleft', legend=c("high","low"), pch=c(16,16), col=c(divPalette(10, "RdYlBu")[10], divPalette(10, "RdYlBu")[1]), bty='n')
 
 library(scatterD3)
 tooltips = paste("lagoslakeid:", hydro_terr_conn_df$lagoslakei,"</strong><br />HYDRO:",round(hydro_terr_conn_df$PC1and2_hydro,3),
@@ -231,7 +217,7 @@ scatterD3(x = hydro_terr_conn_df$PC1and2_hydro, y = hydro_terr_conn_df$PC1and2an
 
 # ggplot with dots colored by combined hydro/terr conn score and outliers >= 10 removed
 gg_sub <- subset(hydro_terr_conn_df, hydro_terr <= 10)
-jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
 combined_scores.point3<-ggplot(gg_sub, aes(x=PC1and2and3_terr,y=PC1and2_hydro))+
   geom_point(aes(colour=gg_sub$hydro_terr), size=1) +
   geom_abline(intercept=0, slope=1, color='black', size=1) +
@@ -247,7 +233,7 @@ combined_scores.point3 +
   theme(legend.text=element_text(size=7))+
   theme(legend.title=element_text(color='black', size=8))+
   theme(plot.title=element_text(size=9, face='bold'))
-dev.off()
+#dev.off()
 
 
 # Map: pythagorean theorem on hydro and terr PCs
@@ -306,7 +292,7 @@ PADUS_IWS_conn <- rbind.data.frame(PADUS_IWS_conn, MI_lakes_IWS_unprotected)
 PADUS_buff_conn <- rbind.data.frame(PADUS_buff_conn, MI_lakes_buff_unprotected)
 
 
-jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_scatter_conn_scores.jpeg',width = 6,height = 6,units = 'in',res=600)
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_scatter_conn_scores.jpeg',width = 6,height = 6,units = 'in',res=600)
   par(mfrow=c(2,2))
   # PLOT A
   par(mar=c(4,4,2,0.5)) #bot,left,top,right
@@ -332,10 +318,10 @@ jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_scatter_conn_scores.j
      xlab='Terrestrial conn index', main='D) GAPS 1-3', xlim=c(0,10), yaxt='n')
   corplot <- round(cor(PADUS_buff_conn$GAP123_buff_pct, PADUS_buff_conn$PC1and2and3_terr, method='pearson', use='pairwise.complete.obs'),2)
   legend('topright', legend=paste0("r = ", corplot), bty='n', cex=0.8)
-dev.off()
+#dev.off()
 
 ## panel histograms of conn scores
-jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_conn_scores.jpeg',width = 3,height = 9,units = 'in',res=600)
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_conn_scores.jpeg',width = 3,height = 9,units = 'in',res=600)
   par(mfrow=c(3,1))
   par(mar=c(2.5,3,1,0.5)) #bot,left,top,right
   hist(hydro_terr_conn_df$PC1and2_hydro, main='', ylab='', xlab='', xlim=c(0,15), ylim=c(0,3500))
@@ -344,7 +330,7 @@ jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_conn_scores.jpeg
   #box(lty=1, col='black')
   hist(hydro_terr_conn_df$hydro_terr, main='',ylab='', xlab='', xlim=c(0,15), ylim=c(0,3500))
   #box(lty=1, col='black')
-dev.off()
+#dev.off()
 
 #hydro_terr_conn_df$hydroQ <- dplyr::ntile(hydro_terr_conn_df$PC1and2_hydro, 4)
 #hydro_terr_conn_df$terrQ <- dplyr::ntile(hydro_terr_conn_df$PC1and2and3_terr, 4)
@@ -363,7 +349,7 @@ scatterplot3d(hydro_terr.x, GAP123_buff_pct, GAP123_IWS_pct, xlab='Hydro/terr co
 # with help from: http://www.sthda.com/english/wiki/impressive-package-for-3d-and-4d-graph-r-software-and-data-visualization 
 library(plot3D)
 
-jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/conn_scores_PADUS_3d.jpeg',width = 6,height = 4,units = 'in',res=600)
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/conn_scores_PADUS_3d.jpeg',width = 6,height = 4,units = 'in',res=600)
   par(mfrow=c(1,2))
   par(mar=c(1,1,2,2)) #bot,left,top,right
   attach(scatter3d_df)
@@ -376,14 +362,9 @@ jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/conn_scores_PADUS_3d.jpeg',
           zlab='IWS % protected', main='GAPS 1-3', colvar=hydro_terr.x, pch=20,
           col=ramp.col(c("firebrick","tan","dodgerblue")),
           clab='Conn score')
-dev.off()
+#dev.off()
 
 cor(scatter3d_df$GAP12_buff_pct, scatter3d_df$GAP12_IWS_pct, method='pearson')
 cor(scatter3d_df$GAP123_buff_pct, scatter3d_df$GAP123_IWS_pct, method='pearson')
 
 ################## Scratch ###########################
-#### Some other approach? Non-metric multidimensional scaling
-# library(ecodist)
-# distmat <- vegdist(hydro_terr_conn_df[,2:ncol(hydro_terr_conn_df)], method='bray')
-# nmds_test <- nmds(distmat, mindim=2, maxdim=2) #warning: slow
-# stressplot(nmds_test, distmat)
