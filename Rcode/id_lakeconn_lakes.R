@@ -1,5 +1,14 @@
-# get inland lakes in Michigan not upstream of or directly connected to the 
-# Great Lakes
+# Identify lakes for stream network analysis
+#
+# Lakes are potentially disqualified if they:
+#   * intersect the Great Lakes
+#   * have no entry for NHDPlus in the x_walk table
+#   * are Isolated
+# 
+#   * are not connected to NHDPlus flowlines
+#   * are a Headwater lake 
+#   * are on the Great Lakes coast
+#   * are downstream of the Great Lakes
 
 library(LAGOSNEgis)
 library(nhdR)
@@ -69,6 +78,7 @@ ggplot() +
   ggtitle(paste0("Total of ", 
                  nrow(dplyr::filter(lake_points, is.na(reason))), 
           " 'good' lakes"))
+ggsave("Figures/bad_lakes.png")
 
 # ---- find_more_subtle_bad_lakes -----
 test <- dplyr::filter(mich_lakes_4ha, 
@@ -76,14 +86,15 @@ test <- dplyr::filter(mich_lakes_4ha,
 
 llid <- test$lagoslakeid[5]
 llid <- 69665
+llid <- 2339
+llid <- lake_info(name = "Duck Lake", state = "Michigan")$lagoslakeid
 
 is_bad_lake <- function(llid){
+  reason <- NA
+  is_bad <- FALSE
+  
   coords      <- lake_info(lagoslakeid = llid)
   focal_poly  <- dplyr::filter(mich_lakes_4ha, lagoslakeid == llid)
-  
-  buffer_size <- units::set_units(
-    sqrt(coords$lake_area_ha * 10000) * 1.2,
-    "m")
   
   # get intersecting flowlines, bad lake if they are all FTYPE coastal
   focal_lines <- nhdR::nhd_plus_query(poly = focal_poly,
@@ -123,8 +134,9 @@ is_bad_lake <- function(llid){
 }
 
 # is_bad_lake(llid)
+# is_bad_lake(2339)
 
-sapply(test$lagoslakeid[1:5], function(x){
+sapply(test$lagoslakeid, function(x){
   print(x) 
   res <- suppressMessages(suppressWarnings(
             is_bad_lake(x)))
