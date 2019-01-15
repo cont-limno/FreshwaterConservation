@@ -100,6 +100,31 @@ clprofiles_no_legend <- function (object, x, vars = NULL, col = NULL) {
 
 ############## Main program #############
 
+# # Number of lakes with maxdepth
+# NHD_1ha <- subset(NHD_pts, AREASQKM >= lake_sqkm_cutoff)
+# NHD_1ha_wDepth <- subset(NHD_1ha, MaxDepth >0)
+# 
+# # compare depths to LAGOSNE depths
+# library(LAGOSNE)
+# dt <- lagosne_load(version = '1.087.1') #returns list of data.frame objects
+# 
+# LAGOSNE_wDepth <- subset(dt$lakes_limno, maxdepth>0)
+# LAGOSNE_wDepth <- LAGOSNE_wDepth[,c('lagoslakeid','maxdepth')]
+# colnames(LAGOSNE_wDepth) <- c('lagoslakeid','maxdepth_LAGOS')
+# 
+# reach1ha_df <- data.frame(lagoslakeid=LAGOS_1ha@data$lagoslakei, ReachCode=LAGOS_1ha@data$ReachCode)
+# 
+# test <- merge(LAGOSNE_wDepth, reach1ha_df, by='lagoslakeid', all.x=F)
+# test <- merge(test, NHD_1ha_wDepth, by.x='ReachCode', by.y='REACHCODE', all.x=F)
+# test <- merge(test, LAGOSNE_wDepth, by='lagoslakeid', all.x=F)
+# 
+# plot(test$MaxDepth ~ test$maxdepth_LAGOS, pch=20, xlab='MaxDepth LAGOS', ylab='MaxDepth NHD', 
+#      xlim=c(0,80), ylim=c(0,80))
+# abline(0,1)
+# corplot <- cor(test$MaxDepth, test$maxdepth_LAGOS, use='pairwise.complete.obs', method='pearson')
+# legend('bottomright', paste0("r = ", round(corplot, 3)), bty='n')
+# mtext(side=3, paste0("n lakes = ", nrow(test)))
+
 # Lake area
 NHD_pts@data$COMID <- as.numeric(NHD_pts@data$COMID) #COMID was character in NHD; must convert
 NHD_pts@data$SDF <- NHD_pts@data$Shape_Leng/(2*sqrt(pi*NHD_pts@data$Shape_Area))
