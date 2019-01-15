@@ -6,6 +6,7 @@ library(nhdR)
 library(sf)
 library(dplyr)
 library(units)
+library(ggplot2) # optional
 library(mapview) # optional
 
 # ---- load_gis_data ----
@@ -16,11 +17,13 @@ library(mapview) # optional
 
 mich_shp       <- query_gis("STATE", "State_Name", "Michigan")
 mich_lakes_4ha <- query_gis_(query = "SELECT * FROM LAGOS_NE_All_Lakes_4ha WHERE STATE LIKE 'MI'")
+gl             <- great_lakes(spatial = TRUE)
 
+# ---- find_obviously_bad_lakes ----
 # remove lakes that intersect the Great Lakes
 # llid <- 2639
 # llid <- 2197
-gl <- great_lakes(spatial = TRUE)
+
 bad_lakes <- mich_lakes_4ha[
   unlist(lapply(
     st_intersects(mich_lakes_4ha, st_buffer(gl, 20)), 
@@ -47,66 +50,84 @@ isolated_lakes$reason <- "isolated"
 bad_lakes <- rbind(bad_lakes, isolated_lakes)
 bad_lakes_llids <- bad_lakes$lagoslakeid
 
+# ---- map_obviously_bad_lakes ----
+
+lake_points <- query_gis("LAGOS_NE_All_Lakes_4ha_POINTS", 
+                              "lagoslakeid", 
+                              mich_lakes_4ha$lagoslakeid)
+lake_points <- lake_points %>%
+  left_join(
+    dplyr::select(
+      st_drop_geometry(bad_lakes), "lagoslakeid", "reason"), 
+    by = "lagoslakeid")
+
+ggplot() + 
+  geom_sf(data = mich_shp) +
+  geom_sf(data = 
+            dplyr::filter(lake_points, !is.na(reason)), 
+          aes(color = reason), size = 1) +
+  ggtitle(paste0("Total of ", 
+                 nrow(dplyr::filter(lake_points, is.na(reason))), 
+          " 'good' lakes"))
+
+# ---- find_more_subtle_bad_lakes -----
 test <- dplyr::filter(mich_lakes_4ha, 
                       !(lagoslakeid %in% bad_lakes$lagoslakeid))
 
 llid <- test$lagoslakeid[5]
-# ---- find_bad_lakes -----
+llid <- 69665
+
 is_bad_lake <- function(llid){
   coords      <- lake_info(lagoslakeid = llid)
   focal_poly  <- dplyr::filter(mich_lakes_4ha, lagoslakeid == llid)
+  
   buffer_size <- units::set_units(
     sqrt(coords$lake_area_ha * 10000) * 1.2,
     "m")
   
   # get intersecting flowlines, bad lake if they are all FTYPE coastal
-  focal_lines <- nhdR::nhd_plus_query(lat = coords$nhd_lat,
-                                    lon = coords$nhd_long,
-                                    dsn = "NHDFlowLine",
-                                    buffer_dist = buffer_size)$sp$NHDFlowLine
+  focal_lines <- nhdR::nhd_plus_query(poly = focal_poly,
+                                    dsn = "NHDFlowLine")$sp$NHDFlowLine
   if(nrow(focal_lines) > 0){
-    focal_lines <- st_transform(focal_lines, st_crs(focal_poly))
-    focal_lines <- focal_lines[
-      unlist(lapply(
-        st_intersects(focal_lines, focal_poly),
-        function(x) length(x) > 0)),]
     all_coastal <- all(focal_lines$FTYPE == "Coastline")
   }else{
-    print("Lake is not connected to NHDPlus streams")
-    all_coastal <- TRUE # lake not connected to nhdplus streams
+    all_coastal <- FALSE
+    is_bad      <- TRUE
+    reason      <- "not connected to nhdp streams"
   }
   
-  if(!all_coastal){
-    # walk upstream, bad lake if we get any FTYPE coastal reaches
+  if(all_coastal){
+    is_bad <- TRUE
+    reason <- "on GL coast"
+  }
+  
+  if(nrow(focal_lines) > 0){
     up_network <- nhdR::extract_network(
       lon = coords$nhd_long, 
       lat = coords$nhd_lat)
-    if(!is.null(nrow(up_network))){
-      downstream_of_gl <- any(up_network$ftype == "Coastal")
+    if(is.null(nrow(up_network))){
+        # set FALSE for now bc this might not mean its a bad lake
+        is_bad <- FALSE
+        reason <- "no upnetwork streams"
     }else{
-      print("No upnetwork streams found in the NHDPlus")
-      # set FALSE for now bc this might not mean its a bad lake
-      downstream_of_gl <- FALSE 
+      if(any(up_network$ftype == "Coastal")){
+        is_bad <- TRUE
+        reason <- "downstream of GL"
+      }
     }
-  }else{
-    downstream_of_gl <- FALSE
   }
+    
+  data.frame("llid" = llid, "is_bad" = is_bad, "reason" = reason, 
+             stringsAsFactors = FALSE)
   
-  if(!all_coastal & !downstream_of_gl){
-    FALSE # not bad lake
-  }else{
-    TRUE # bad lake
-  }
 }
 
 # is_bad_lake(llid)
 
-sapply(test$lagoslakeid, function(x){
+sapply(test$lagoslakeid[1:5], function(x){
   print(x) 
   res <- suppressMessages(suppressWarnings(
-    data.frame("llid" = x, 
-                    "bad_lake" = is_bad_lake(x), stringsAsFactors = FALSE)
-    ))
+            is_bad_lake(x)))
   if(x == test$lagoslakeid[1]){
     write.table(res, file = "Data/connectivity_lakes.csv", append = TRUE, 
                 sep = ",", row.names = FALSE, col.names = TRUE)
