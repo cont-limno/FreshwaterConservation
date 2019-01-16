@@ -59,6 +59,10 @@ hydro_conn_df$connwetland_pct <- hydro_conn_df$connwetland_pct/100
 hydro_conn_df$lake_area_pct <- hydro_conn_df$lake_area_pct/100
 hydro_conn_df$shoreline_wetlands_pct <- hydro_conn_df$shoreline_wetlands_pct/100
 
+#get inverse of dam density (so that higher value represents more connectivity)
+# forget it; too little variability in this variable to make it worth using
+#hydro_conn_df$damdensity_ptsperha <- (1/hydro_conn_df$damdensity_ptsperha)
+
 # likely due to raster processing/topology issues, some proportions slightly exceeded 1; adjust these to 1
 terr_conn_df$WetlandArea_pct <- ifelse(terr_conn_df$WetlandArea_pct > 1, 1, terr_conn_df$WetlandArea_pct)
 
@@ -200,7 +204,7 @@ hydro_terr_conn_df$hydro_terr <- sqrt((hydro_terr_conn_df$PC1and2_hydro ^2) + (h
 hydro_terr_conn_df <- hydro_terr_conn_df[complete.cases(hydro_terr_conn_df), ]
 
 
-dev.new(width=4, height=4)
+#dev.new(width=4, height=4)
 par(mfrow=c(1,1))
 plot(PC1and2_hydro ~ PC1and2and3_terr, data=hydro_terr_conn_df, pch=16, xlim=c(0,10), ylim=c(0,10), col='black',
      xlab='Terrestrial', ylab='Hydrologic')
