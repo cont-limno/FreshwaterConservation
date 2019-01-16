@@ -87,7 +87,7 @@ test <- dplyr::filter(mich_lakes_4ha,
 llid <- test$lagoslakeid[5]
 llid <- 69665
 llid <- 2339
-llid <- lake_info(name = "Duck Lake", state = "Michigan")$lagoslakeid
+llid <- 2317
 
 is_bad_lake <- function(llid){
   reason <- NA
