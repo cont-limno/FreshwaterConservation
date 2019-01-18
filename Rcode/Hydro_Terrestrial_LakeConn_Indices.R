@@ -209,7 +209,13 @@ gg_sub <- subset(hydro_terr_conn_df, hydro_terr <= 10)
 #jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
 combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
   geom_point(aes(colour=gg_sub$hydro_terr), size=1) +
-  geom_abline(intercept=0, slope=1, color='black', size=1) +
+  #geom_abline(intercept=0, slope=1, color='black', size=1) + #1:1 fit line
+  geom_hline(yintercept=5, color='black', linetype='dashed', size=1) +
+  geom_vline(xintercept=5, color='black', linetype='dashed', size=1) +
+  annotate("text", x=0, y=10, label='A)', size=4)+
+  annotate("text", x=0, y=4.6, label='C)', size=4)+
+  annotate("text", x=5.5, y=10, label='B)', size=4)+
+  annotate("text", x=5.5, y=4.6, label='D)', size=4)+
   ggtitle('Combined hydrologic/terrestrial connectivity score')
 combined_scores.point3$labels$colour = 'Combined score' # change legend title
 combined_scores.point3 +
@@ -217,7 +223,7 @@ combined_scores.point3 +
   scale_y_continuous(name="Hydrologic", limits=c(0, 10)) +
   scale_color_gradient(low='firebrick1', high='dodgerblue')+
   theme_classic() +
-  theme(legend.position=c(0.9,0.55))+
+  theme(legend.position=c(0.9,0.75))+
   theme(legend.key.size=unit(0.15,"in"))+
   theme(legend.text=element_text(size=7))+
   theme(legend.title=element_text(color='black', size=8))+
@@ -305,23 +311,28 @@ PADUS_buff_conn <- rbind.data.frame(PADUS_buff_conn, MI_lakes_buff_unprotected)
 #dev.off()
 
 ## panel histograms of conn scores
-#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_conn_scores.jpeg',width = 3,height = 9,units = 'in',res=600)
-  par(mfrow=c(3,1))
+jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_conn_scores.jpeg',width = 6,height = 3,units = 'in',res=600)
+  par(mfrow=c(1,3))
+  # First plot
   par(mar=c(2.5,3,1,0.5)) #bot,left,top,right
-  hist(hydro_terr_conn_df$PChydroall, main='', ylab='', xlab='', xlim=c(0,10), ylim=c(0,3500), breaks=seq(0,13,1))
-  #box(lty=1, col='black')
-  hist(hydro_terr_conn_df$PCterrall, main='', ylab='', xlab='', xlim=c(0,10), ylim=c(0,3500), breaks=seq(0,13,1))
-  #box(lty=1, col='black')
-  hist(hydro_terr_conn_df$hydro_terr, main='',ylab='', xlab='', xlim=c(0,10), ylim=c(0,3500), breaks=seq(0,13,1))
-  #box(lty=1, col='black')
-#dev.off()
+  hist(hydro_terr_conn_df$PChydroall, ylab='', xlab='', xlim=c(0,13), ylim=c(0,3500), breaks=seq(0,13,1),
+       main='Hydologic', las=1)
+  # second plot
+  #par(mar=c(2.5,0.25,1,1)) #bot,left,top,right
+  hist(hydro_terr_conn_df$PCterrall, ylab='', xlab='', xlim=c(0,13), ylim=c(0,3500), breaks=seq(0,13,1),
+       main='Terrestrial', las=1)
+  # third plot
+  #par(mar=c(2.5,0.5,1,0.5)) #bot,left,top,right
+  hist(hydro_terr_conn_df$hydro_terr,ylab='', xlab='', xlim=c(0,13), ylim=c(0,3500), breaks=seq(0,13,1),
+       main='Combined', las=1)
+dev.off()
 
 # single histogram
-jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/hist_conn_scores.jpeg',width = 4.26,height = 3.85,units = 'in',res=600)
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/hist_conn_scores.jpeg',width = 4.26,height = 3.85,units = 'in',res=600)
   par(mfrow=c(1,1))
   par(mar=c(2.5,3,1,0.5)) #bot,left,top,right
   hist(hydro_terr_conn_df$PChydroall, main='', ylab='', xlab='', xlim=c(0,13), ylim=c(0,3500), breaks=seq(0,13,1))
-dev.off()
+#dev.off()
   
   
   
@@ -418,54 +429,62 @@ boxplot(terr_conn_char$min_cost_dist_corrected ~ terr_conn_char$ScoreGroup, las=
 # Combined hydro/terrestrial
 hydro_terr_conn_char <- merge(hydro_terr_conn_df, terr_conn_char[,c(1:8)], by='lagoslakeid')
 hydro_terr_conn_char <- merge(hydro_terr_conn_char, hydro_conn_char[,c(1:6)], by='lagoslakeid')
-hydro_terr_conn_char <- hydro_terr_conn_char[,c(1,4,6:11,13:16)]
+hydro_terr_conn_char <- hydro_terr_conn_char[,c(1:4,6:10,13:16)]
+colnames(hydro_terr_conn_char)[2:3] <- c('PChydroall','PCterrall')
 #hydro_terr_conn_char$ScoreGroup <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(seq(0,10,2),24))
-hydro_terr_conn_char$ScoreGroup <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(0,2,5,13))
+#hydro_terr_conn_char$ScoreGroup <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(0,2,5,13))
+# Create new column that divides data into quadrants per conceptual model, using 5 as the cutoff
+score_cutoff <- 5
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > score_cutoff & hydro_terr_conn_char$PCterrall < score_cutoff, 'QA',NA)
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall < score_cutoff & hydro_terr_conn_char$PCterrall < score_cutoff, 'QC',hydro_terr_conn_char$Quadrant)
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > score_cutoff & hydro_terr_conn_char$PCterrall > score_cutoff, 'QB',hydro_terr_conn_char$Quadrant)
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall < score_cutoff & hydro_terr_conn_char$PCterrall > score_cutoff, 'QD',hydro_terr_conn_char$Quadrant)
 
 # number of lakes per conn score group
 hydro_terr_conn_char %>% 
-  group_by(ScoreGroup) %>%
-  summarise(nLakes=length(ScoreGroup))
+  group_by(Quadrant) %>%
+  summarise(nLakes=length(Quadrant))
 
 dev.off()
 
+
+
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_conn_scores.jpeg',width = 8,height = 5,units = 'in',res=600)
 par(mfrow=c(2,4))
+# top four
+par(mar=c(2,4,2,1)) #bot,left,top,right
+boxplot(hydro_terr_conn_char$nLakePatches ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='', main='Lake patches', ylab='Number of patches in buffer')
 
-boxplot(hydro_terr_conn_char$nLakePatches ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Lake patches', names=c('Low','Med','Hi'))
+boxplot(hydro_terr_conn_char$LakeEdgeArea_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='', main='Lake edge area', ylab='Proportion of buffer')
 
-boxplot(hydro_terr_conn_char$LakeEdgeArea_pct ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Lake edge area prop', names=c('Low','Med','Hi'))
+boxplot(hydro_terr_conn_char$nWetlandPatches ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='', main='Wetland patches', ylab='Number of patches in buffer')
 
-boxplot(hydro_terr_conn_char$nWetlandPatches ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Wetland patches', names=c('Low','Med','Hi'))
+boxplot(hydro_terr_conn_char$min_cost_dist_corrected ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='', main='Permeability', ylab='Low to high in buffer')
 
-#boxplot(hydro_terr_conn_char$WetlandArea_pct ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-#        xlab='Combined conn score', main='Wetland prop', names=c('Low','Med','Hi'))
+# bottom four
+par(mar=c(4,4,2,1)) #bot,left,top,right
+boxplot(hydro_terr_conn_char$stream_density_mperha ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='Connectivity quadrant', main='Stream density', ylab='m/ha (watershed)')
 
-# boxplot(hydro_terr_conn_char$shape_index ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-#         xlab='Combined conn score', main='Shape index', names=c('Low','Med','Hi'))
+boxplot(hydro_terr_conn_char$wetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of watershed')
 
-boxplot(hydro_terr_conn_char$min_cost_dist_corrected ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Cost distance', names=c('Low','Med','Hi'))
+boxplot(hydro_terr_conn_char$connwetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='Connectivity quadrant', main='Stream-connected wetlands', ylab='Proportion of watershed')
 
-boxplot(hydro_terr_conn_char$stream_density_mperha ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Stream density', names=c('Low','Med','Hi'))
-
-boxplot(hydro_terr_conn_char$wetland_pct ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Wetland prop', names=c('Low','Med','Hi'))
-
-boxplot(hydro_terr_conn_char$connwetland_pct ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Conn wetland prop', names=c('Low','Med','Hi'))
-
-boxplot(hydro_terr_conn_char$shoreline_wetlands_pct ~ hydro_terr_conn_char$ScoreGroup, las=1, 
-        xlab='Combined conn score', main='Shoreline wetland prop', names=c('Low','Med','Hi'))
+boxplot(hydro_terr_conn_char$shoreline_wetlands_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='Connectivity quadrant', main='Shoreline wetlands', ylab='Proportion of lake perimeter')
+#dev.off()
 
 # Prepare shapefile for exploratory mapping in ArcGIS
 mich_lakes_4ha_export <- merge(lakes_4ha_pts, hydro_terr_conn_char, by.x='lagoslakei', by.y='lagoslakeid', all.x=F)
 
 mich_lakes_4ha_export@data <- mich_lakes_4ha_export@data %>% 
-  select(1, 6, 12, 13, 33:43)
+  select(1, 6, 12, 13, 33:45)
 
 mich_lakes_4ha_export <- merge(mich_lakes_4ha_export, hydro_terr_conn_df[,c(1:3)], by.x='lagoslakei', by.y='lagoslakeid')
 
@@ -473,6 +492,64 @@ mich_lakes_4ha_export <- merge(mich_lakes_4ha_export, hydro_terr_conn_df[,c(1:3)
 dsnname <- "C:/Ian_GIS/FreshwaterConservation/ConnIndices"
 layername <- "hydro_terr_conn_index"
 #writeOGR(mich_lakes_4ha_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+
+# Conn score quadrant by % protection?
+lagoslakeid_quadrant <- data.frame(lagoslakeid=hydro_terr_conn_char$lagoslakeid, Quadrant=hydro_terr_conn_char$Quadrant)
+PADUS_buff_quadrant <- merge(lagoslakeid_quadrant, PADUS_buff_conn[,1:3], by='lagoslakeid', all.x=F)
+PADUS_IWS_quadrant <- merge(lagoslakeid_quadrant, PADUS_IWS_conn[,1:3], by='lagoslakeid', all.x=F)
+
+# paneled boxplots of % protection by conn quadrant
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_PADUS.jpeg',width = 6,height = 6,units = 'in',res=600)
+par(mfrow=c(2,2))
+par(mar=c(2,4,2,1)) #bot,left,top,right
+boxplot(PADUS_IWS_quadrant$GAP12_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-2',
+        ylab='Proportion watershed protected', xaxt='n')
+
+par(mar=c(2,0.5,2,4.5)) #bot,left,top,right
+boxplot(PADUS_IWS_quadrant$GAP123_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-3',
+        ylab='', yaxt='n', xaxt='n')
+
+par(mar=c(3.5,4,0.5,1)) #bot,left,top,right
+boxplot(PADUS_buff_quadrant$GAP12_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1, main='',
+        ylab='Proportion buffer protected')
+
+par(mar=c(3.5,0.5,0.5,4.5)) #bot,left,top,right
+boxplot(PADUS_buff_quadrant$GAP123_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1, main='',
+        ylab='', yaxt='n')
+#dev.off()
+
+
+## Pariwise comparisons of % protection by quadrants
+library(lattice)
+# Check distributions for normality
+histogram(~ GAP12_IWS_pct | Quadrant,data=PADUS_IWS_quadrant,layout=c(1,4))
+histogram(~ GAP123_IWS_pct | Quadrant,data=PADUS_IWS_quadrant,layout=c(1,4))
+histogram(~ GAP12_buff_pct | Quadrant,data=PADUS_buff_quadrant,layout=c(1,4))
+histogram(~ GAP123_buff_pct | Quadrant,data=PADUS_buff_quadrant,layout=c(1,4))
+
+# not normal (many low values, so use Bartlett's test for homoskedasticity; can use Kruskal-Wallis if yes)
+bartlett.test(GAP12_IWS_pct ~ Quadrant,data=PADUS_IWS_quadrant)
+bartlett.test(GAP123_IWS_pct ~ Quadrant,data=PADUS_IWS_quadrant)
+bartlett.test(GAP12_buff_pct ~ Quadrant,data=PADUS_buff_quadrant)
+bartlett.test(GAP123_buff_pct ~ Quadrant,data=PADUS_buff_quadrant)
+
+# Global Welch's one-way ANOVA (OK with heteroskedasticity)
+oneway.test(GAP12_IWS_pct ~ Quadrant,data=PADUS_IWS_quadrant)
+oneway.test(GAP123_IWS_pct ~ Quadrant,data=PADUS_IWS_quadrant)
+oneway.test(GAP12_buff_pct ~ Quadrant,data=PADUS_buff_quadrant)
+oneway.test(GAP123_buff_pct ~ Quadrant,data=PADUS_buff_quadrant)
+
+# By setting pool.sd to F, turning off homoskedasticity assumption
+# but sample sizes in group B very small (and very unequal in general, except A and D)
+pairwise.t.test(PADUS_IWS_quadrant$GAP12_IWS_pct, PADUS_IWS_quadrant$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(PADUS_IWS_quadrant$GAP123_IWS_pct, PADUS_IWS_quadrant$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(PADUS_buff_quadrant$GAP12_buff_pct, PADUS_buff_quadrant$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(PADUS_buff_quadrant$GAP123_buff_pct, PADUS_buff_quadrant$Quadrant, p.adjust.method='BH', pool.sd=F)
+
+# kruskal.test(PADUS_IWS_quadrant$GAP12_IWS_pct ~ PADUS_IWS_quadrant$Quadrant)
+# kruskal.test(PADUS_IWS_quadrant$GAP123_IWS_pct ~ PADUS_IWS_quadrant$Quadrant)
+# kruskal.test(PADUS_buff_quadrant$GAP12_buff_pct ~ PADUS_IWS_quadrant$Quadrant)
+# kruskal.test(PADUS_buff_quadrant$GAP123_buff_pct ~ PADUS_IWS_quadrant$Quadrant)
 
 # Conn score by lake conn type?
 par(mfrow=c(1,3))
