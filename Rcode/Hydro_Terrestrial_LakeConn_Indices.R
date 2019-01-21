@@ -551,7 +551,25 @@ pairwise.t.test(PADUS_buff_quadrant$GAP123_buff_pct, PADUS_buff_quadrant$Quadran
 # kruskal.test(PADUS_buff_quadrant$GAP12_buff_pct ~ PADUS_IWS_quadrant$Quadrant)
 # kruskal.test(PADUS_buff_quadrant$GAP123_buff_pct ~ PADUS_IWS_quadrant$Quadrant)
 
-# Conn score by lake conn type?
+# Median protection by quadrant (group)
+PADUS_IWS_quadrant %>%
+  group_by(Quadrant) %>%
+  summarize(Median=median(GAP12_IWS_pct))
+
+PADUS_IWS_quadrant %>%
+  group_by(Quadrant) %>%
+  summarize(Median=median(GAP123_IWS_pct))
+
+PADUS_buff_quadrant %>%
+  group_by(Quadrant) %>%
+  summarize(Median=median(GAP12_buff_pct))
+
+PADUS_buff_quadrant %>%
+  group_by(Quadrant) %>%
+  summarize(Median=median(GAP123_buff_pct))
+
+
+# Conn score by LAGOS lake conn type?
 par(mfrow=c(1,3))
 boxplot(mich_lakes_4ha_export@data$hydro_terr ~ as.factor(mich_lakes_4ha_export@data$LakeConnec), las=1,
         ylab='Combined hydro/terrestrial conn score', main='Combined', ylim=c(0,13), names=c('DRLS','DRS','HW','ISOL'))
