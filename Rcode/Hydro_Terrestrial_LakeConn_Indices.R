@@ -206,7 +206,7 @@ scatterD3(x = hydro_terr_conn_df$PCterrall, y = hydro_terr_conn_df$PChydroall, x
 
 # ggplot with dots colored by combined hydro/terr conn score and outliers >= 10 removed
 gg_sub <- subset(hydro_terr_conn_df, hydro_terr <= 10)
-#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
+jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
 combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
   geom_point(aes(colour=gg_sub$hydro_terr), size=1) +
   #geom_abline(intercept=0, slope=1, color='black', size=1) + #1:1 fit line
@@ -216,11 +216,11 @@ combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
   annotate("text", x=0, y=4.6, label='C)', size=4)+
   annotate("text", x=5.5, y=10, label='B)', size=4)+
   annotate("text", x=5.5, y=4.6, label='D)', size=4)+
-  ggtitle('Combined hydrologic/terrestrial connectivity score')
+  ggtitle('')
 combined_scores.point3$labels$colour = 'Combined score' # change legend title
 combined_scores.point3 +
-  scale_x_continuous(name="Terrestrial", limits=c(0, 10)) +
-  scale_y_continuous(name="Hydrologic", limits=c(0, 10)) +
+  scale_x_continuous(name="Semi-aquatic connectivity", limits=c(0, 10)) +
+  scale_y_continuous(name="Aquatic connectivity", limits=c(0, 10)) +
   scale_color_gradient(low='firebrick1', high='dodgerblue')+
   theme_classic() +
   theme(legend.position=c(0.9,0.75))+
@@ -228,7 +228,7 @@ combined_scores.point3 +
   theme(legend.text=element_text(size=7))+
   theme(legend.title=element_text(color='black', size=8))+
   theme(plot.title=element_text(size=9, face='bold'))
-#dev.off()
+dev.off()
 
 
 # Map: pythagorean theorem on hydro and terr PCs
@@ -316,11 +316,11 @@ jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_conn_scores.jpeg
   # First plot
   par(mar=c(2.5,3,1,0.5)) #bot,left,top,right
   hist(hydro_terr_conn_df$PChydroall, ylab='', xlab='', xlim=c(0,13), ylim=c(0,3500), breaks=seq(0,13,1),
-       main='Hydologic', las=1)
+       main='Aquatic', las=1)
   # second plot
   #par(mar=c(2.5,0.25,1,1)) #bot,left,top,right
   hist(hydro_terr_conn_df$PCterrall, ylab='', xlab='', xlim=c(0,13), ylim=c(0,3500), breaks=seq(0,13,1),
-       main='Terrestrial', las=1)
+       main='Semi-aquatic', las=1)
   # third plot
   #par(mar=c(2.5,0.5,1,0.5)) #bot,left,top,right
   hist(hydro_terr_conn_df$hydro_terr,ylab='', xlab='', xlim=c(0,13), ylim=c(0,3500), breaks=seq(0,13,1),
@@ -449,7 +449,7 @@ dev.off()
 
 
 
-#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_conn_scores.jpeg',width = 8,height = 5,units = 'in',res=600)
+jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_conn_scores.jpeg',width = 8,height = 5,units = 'in',res=600)
 par(mfrow=c(2,4))
 # top four
 par(mar=c(2,4,2,1)) #bot,left,top,right
@@ -474,11 +474,14 @@ boxplot(hydro_terr_conn_char$wetland_pct ~ hydro_terr_conn_char$Quadrant, las=1,
         xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of watershed')
 
 boxplot(hydro_terr_conn_char$connwetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='Stream-connected wetlands', ylab='Proportion of watershed')
+        xlab='Connectivity quadrant', main='', ylab='Proportion of watershed')
+title("Stream-connected wetlands", cex.main=0.95) #title too long; cutoff otherwise
 
-boxplot(hydro_terr_conn_char$shoreline_wetlands_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='Shoreline wetlands', ylab='Proportion of lake perimeter')
-#dev.off()
+boxplot(hydro_terr_conn_char$shoreline_wetlands_pct ~ hydro_terr_conn_char$Quadrant,
+        xlab='Connectivity quadrant', main='Shoreline wetlands', ylab='Proportion of lake perimeter',
+        yaxt='n')
+axis(2, cex.axis=0.8, las=1)
+dev.off()
 
 # Prepare shapefile for exploratory mapping in ArcGIS
 mich_lakes_4ha_export <- merge(lakes_4ha_pts, hydro_terr_conn_char, by.x='lagoslakei', by.y='lagoslakeid', all.x=F)
@@ -499,13 +502,13 @@ PADUS_buff_quadrant <- merge(lagoslakeid_quadrant, PADUS_buff_conn[,1:3], by='la
 PADUS_IWS_quadrant <- merge(lagoslakeid_quadrant, PADUS_IWS_conn[,1:3], by='lagoslakeid', all.x=F)
 
 # paneled boxplots of % protection by conn quadrant
-#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_PADUS.jpeg',width = 6,height = 6,units = 'in',res=600)
+jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_PADUS.jpeg',width = 6,height = 6,units = 'in',res=600)
 par(mfrow=c(2,2))
-par(mar=c(2,4,2,1)) #bot,left,top,right
+par(mar=c(1,4,3,1)) #bot,left,top,right
 boxplot(PADUS_IWS_quadrant$GAP12_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-2',
         ylab='Proportion watershed protected', xaxt='n')
 
-par(mar=c(2,0.5,2,4.5)) #bot,left,top,right
+par(mar=c(1,0.5,3,4.5)) #bot,left,top,right
 boxplot(PADUS_IWS_quadrant$GAP123_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-3',
         ylab='', yaxt='n', xaxt='n')
 
@@ -516,7 +519,7 @@ boxplot(PADUS_buff_quadrant$GAP12_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1
 par(mar=c(3.5,0.5,0.5,4.5)) #bot,left,top,right
 boxplot(PADUS_buff_quadrant$GAP123_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1, main='',
         ylab='', yaxt='n')
-#dev.off()
+dev.off()
 
 
 ## Pariwise comparisons of % protection by quadrants
