@@ -1,6 +1,6 @@
 ############### Terrestrial and hydrologic lake connectivity indices ###########################
 # Date: 1-3-19
-# updated: 1-17-19
+# updated: 1-23-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -208,7 +208,7 @@ scatterD3(x = hydro_terr_conn_df$PCterrall, y = hydro_terr_conn_df$PChydroall, x
 gg_sub <- subset(hydro_terr_conn_df, hydro_terr <= 10)
 jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
 combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
-  geom_point(aes(colour=gg_sub$hydro_terr), size=1) +
+  geom_point(aes(colour=gg_sub$hydro_terr), size=1, colour='black') +
   #geom_abline(intercept=0, slope=1, color='black', size=1) + #1:1 fit line
   geom_hline(yintercept=5, color='black', linetype='dashed', size=1) +
   geom_vline(xintercept=5, color='black', linetype='dashed', size=1) +
@@ -221,7 +221,7 @@ combined_scores.point3$labels$colour = 'Combined score' # change legend title
 combined_scores.point3 +
   scale_x_continuous(name="Semi-aquatic connectivity", limits=c(0, 10)) +
   scale_y_continuous(name="Aquatic connectivity", limits=c(0, 10)) +
-  scale_color_gradient(low='firebrick1', high='dodgerblue')+
+  #scale_color_gradient(low='firebrick1', high='dodgerblue')+
   theme_classic() +
   theme(legend.position=c(0.9,0.75))+
   theme(legend.key.size=unit(0.15,"in"))+
@@ -451,35 +451,36 @@ dev.off()
 
 jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_conn_scores.jpeg',width = 8,height = 5,units = 'in',res=600)
 par(mfrow=c(2,4))
+boxplot_cols <- c('dodgerblue3', 'darkorchid','lemonchiffon1', 'firebrick2')
 # top four
 par(mar=c(2,4,2,1)) #bot,left,top,right
 boxplot(hydro_terr_conn_char$nLakePatches ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='', main='Lake patches', ylab='Number of patches in buffer')
+        xlab='', main='Lake patches', ylab='Number of patches in buffer', col=boxplot_cols)
 
 boxplot(hydro_terr_conn_char$LakeEdgeArea_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='', main='Lake edge area', ylab='Proportion of buffer')
+        xlab='', main='Lake edge area', ylab='Proportion of buffer', col=boxplot_cols)
 
 boxplot(hydro_terr_conn_char$nWetlandPatches ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='', main='Wetland patches', ylab='Number of patches in buffer')
+        xlab='', main='Wetland patches', ylab='Number of patches in buffer', col=boxplot_cols)
 
 boxplot(hydro_terr_conn_char$min_cost_dist_corrected ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='', main='Permeability', ylab='Low to high in buffer')
+        xlab='', main='Permeability', ylab='Low to high in buffer', col=boxplot_cols)
 
 # bottom four
 par(mar=c(4,4,2,1)) #bot,left,top,right
 boxplot(hydro_terr_conn_char$stream_density_mperha ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='Stream density', ylab='m/ha (watershed)')
+        xlab='Connectivity quadrant', main='Stream density', ylab='m/ha (watershed)', col=boxplot_cols)
 
 boxplot(hydro_terr_conn_char$wetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of watershed')
+        xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of watershed', col=boxplot_cols)
 
 boxplot(hydro_terr_conn_char$connwetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='', ylab='Proportion of watershed')
+        xlab='Connectivity quadrant', main='', ylab='Proportion of watershed', col=boxplot_cols)
 title("Stream-connected wetlands", cex.main=0.95) #title too long; cutoff otherwise
 
 boxplot(hydro_terr_conn_char$shoreline_wetlands_pct ~ hydro_terr_conn_char$Quadrant,
         xlab='Connectivity quadrant', main='Shoreline wetlands', ylab='Proportion of lake perimeter',
-        yaxt='n')
+        yaxt='n', col=boxplot_cols)
 axis(2, cex.axis=0.8, las=1)
 dev.off()
 
@@ -506,19 +507,19 @@ jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_PADUS.jpeg',w
 par(mfrow=c(2,2))
 par(mar=c(1,4,3,1)) #bot,left,top,right
 boxplot(PADUS_IWS_quadrant$GAP12_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-2',
-        ylab='Proportion watershed protected', xaxt='n')
+        ylab='Proportion watershed protected', xaxt='n', col=boxplot_cols)
 
 par(mar=c(1,0.5,3,4.5)) #bot,left,top,right
 boxplot(PADUS_IWS_quadrant$GAP123_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-3',
-        ylab='', yaxt='n', xaxt='n')
+        ylab='', yaxt='n', xaxt='n', col=boxplot_cols)
 
 par(mar=c(3.5,4,0.5,1)) #bot,left,top,right
 boxplot(PADUS_buff_quadrant$GAP12_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1, main='',
-        ylab='Proportion buffer protected')
+        ylab='Proportion buffer protected', col=boxplot_cols)
 
 par(mar=c(3.5,0.5,0.5,4.5)) #bot,left,top,right
 boxplot(PADUS_buff_quadrant$GAP123_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1, main='',
-        ylab='', yaxt='n')
+        ylab='', yaxt='n', col=boxplot_cols)
 dev.off()
 
 
