@@ -468,11 +468,11 @@ boxplot(hydro_terr_conn_char$min_cost_dist_corrected ~ hydro_terr_conn_char$Quad
 
 # bottom four
 par(mar=c(4,4,2,1)) #bot,left,top,right
+boxplot(hydro_terr_conn_char$wetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
+        xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of buffer', col=boxplot_cols)
+
 boxplot(hydro_terr_conn_char$stream_density_mperha ~ hydro_terr_conn_char$Quadrant, las=1, 
         xlab='Connectivity quadrant', main='Stream density', ylab='m/ha (watershed)', col=boxplot_cols)
-
-boxplot(hydro_terr_conn_char$wetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of watershed', col=boxplot_cols)
 
 boxplot(hydro_terr_conn_char$connwetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
         xlab='Connectivity quadrant', main='', ylab='Proportion of watershed', col=boxplot_cols)
@@ -506,11 +506,11 @@ PADUS_IWS_quadrant <- merge(lagoslakeid_quadrant, PADUS_IWS_conn[,1:3], by='lago
 jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_PADUS.jpeg',width = 6,height = 6,units = 'in',res=600)
 par(mfrow=c(2,2))
 par(mar=c(1,4,3,1)) #bot,left,top,right
-boxplot(PADUS_IWS_quadrant$GAP12_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-2',
+boxplot(PADUS_IWS_quadrant$GAP12_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='Strict protection',
         ylab='Proportion watershed protected', xaxt='n', col=boxplot_cols)
 
 par(mar=c(1,0.5,3,4.5)) #bot,left,top,right
-boxplot(PADUS_IWS_quadrant$GAP123_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='GAPS 1-3',
+boxplot(PADUS_IWS_quadrant$GAP123_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='Multi-use',
         ylab='', yaxt='n', xaxt='n', col=boxplot_cols)
 
 par(mar=c(3.5,4,0.5,1)) #bot,left,top,right
@@ -572,6 +572,24 @@ PADUS_buff_quadrant %>%
   group_by(Quadrant) %>%
   summarize(Median=median(GAP123_buff_pct))
 
+## Pairwise comparisons of quadrants by conn variables
+histogram(~ nLakePatches | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+histogram(~ LakeEdgeArea_pct | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+histogram(~ nWetlandPatches | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+histogram(~ WetlandArea_pct | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+histogram(~ min_cost_dist_corrected | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+histogram(~ stream_density_mperha | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+histogram(~ connwetland_pct | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+histogram(~ shoreline_wetlands_pct | Quadrant,data=hydro_terr_conn_char,layout=c(1,4))
+
+pairwise.t.test(hydro_terr_conn_char$nLakePatches, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(hydro_terr_conn_char$LakeEdgeArea_pct, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(hydro_terr_conn_char$nWetlandPatches, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(hydro_terr_conn_char$WetlandArea_pct, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(hydro_terr_conn_char$min_cost_dist_corrected, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(hydro_terr_conn_char$stream_density_mperha, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(hydro_terr_conn_char$connwetland_pct, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
+pairwise.t.test(hydro_terr_conn_char$shoreline_wetlands_pct, hydro_terr_conn_char$Quadrant, p.adjust.method='BH', pool.sd=F)
 
 # Conn score by LAGOS lake conn type?
 par(mfrow=c(1,3))
