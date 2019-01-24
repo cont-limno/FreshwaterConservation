@@ -469,18 +469,18 @@ boxplot(hydro_terr_conn_char$min_cost_dist_corrected ~ hydro_terr_conn_char$Quad
 # bottom four
 par(mar=c(4,4,2,1)) #bot,left,top,right
 boxplot(hydro_terr_conn_char$wetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of buffer', col=boxplot_cols)
+        xlab='Connectivity quadrant', main='Wetland area', ylab='Proportion of buffer', col=boxplot_cols, ylim=c(0,1.1))
 
 boxplot(hydro_terr_conn_char$stream_density_mperha ~ hydro_terr_conn_char$Quadrant, las=1, 
         xlab='Connectivity quadrant', main='Stream density', ylab='m/ha (watershed)', col=boxplot_cols)
 
 boxplot(hydro_terr_conn_char$connwetland_pct ~ hydro_terr_conn_char$Quadrant, las=1, 
-        xlab='Connectivity quadrant', main='', ylab='Proportion of watershed', col=boxplot_cols)
+        xlab='Connectivity quadrant', main='', ylab='Proportion of watershed', col=boxplot_cols, ylim=c(0,1.1))
 title("Stream-connected wetlands", cex.main=0.95) #title too long; cutoff otherwise
 
 boxplot(hydro_terr_conn_char$shoreline_wetlands_pct ~ hydro_terr_conn_char$Quadrant,
         xlab='Connectivity quadrant', main='Shoreline wetlands', ylab='Proportion of lake perimeter',
-        yaxt='n', col=boxplot_cols)
+        yaxt='n', col=boxplot_cols, ylim=c(0,0.014))
 axis(2, cex.axis=0.8, las=1)
 dev.off()
 
@@ -507,19 +507,19 @@ jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_PADUS.jpeg',w
 par(mfrow=c(2,2))
 par(mar=c(1,4,3,1)) #bot,left,top,right
 boxplot(PADUS_IWS_quadrant$GAP12_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='Strict protection',
-        ylab='Proportion watershed protected', xaxt='n', col=boxplot_cols)
+        ylab='Proportion watershed protected', xaxt='n', col=boxplot_cols, ylim=c(0,1.1)) #creating space so can indicate signif differences on graph
 
 par(mar=c(1,0.5,3,4.5)) #bot,left,top,right
 boxplot(PADUS_IWS_quadrant$GAP123_IWS_pct ~ PADUS_IWS_quadrant$Quadrant, las=1, main='Multi-use',
-        ylab='', yaxt='n', xaxt='n', col=boxplot_cols)
+        ylab='', yaxt='n', xaxt='n', col=boxplot_cols, ylim=c(0,1.1))
 
 par(mar=c(3.5,4,0.5,1)) #bot,left,top,right
 boxplot(PADUS_buff_quadrant$GAP12_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1, main='',
-        ylab='Proportion buffer protected', col=boxplot_cols)
+        ylab='Proportion buffer protected', col=boxplot_cols, ylim=c(0,1.1))
 
 par(mar=c(3.5,0.5,0.5,4.5)) #bot,left,top,right
 boxplot(PADUS_buff_quadrant$GAP123_buff_pct ~ PADUS_buff_quadrant$Quadrant, las=1, main='',
-        ylab='', yaxt='n', col=boxplot_cols)
+        ylab='', yaxt='n', col=boxplot_cols, ylim=c(0,1.1))
 dev.off()
 
 
