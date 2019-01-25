@@ -607,4 +607,12 @@ TukeyHSD(aov(mich_lakes_4ha_export@data$hydro_terr ~ as.factor(mich_lakes_4ha_ex
 TukeyHSD(aov(mich_lakes_4ha_export@data$PChydroall ~ as.factor(mich_lakes_4ha_export@data$LakeConnec)))
 TukeyHSD(aov(mich_lakes_4ha_export@data$PCterrall ~ as.factor(mich_lakes_4ha_export@data$LakeConnec)))
 
-
+## Compare size distribution of IWS vs. buffer areas
+terr_conn_df2 <- read.csv("Data/LakeWetlandPatchStats_2020mBuff.csv")
+terr_conn_df2$BufferArea_ha <- terr_conn_df2$WetlandArea_ha/terr_conn_df2$WetlandArea_pct
+dev.off()
+par(mfrow=c(1,2))
+hist(PADUS_IWS_conn$IWS_area_ha)
+hist(terr_conn_df2$BufferArea_ha)
+summary(PADUS_IWS_conn$IWS_area_ha)
+summary(terr_conn_df2$BufferArea_ha)
