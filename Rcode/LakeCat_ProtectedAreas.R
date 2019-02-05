@@ -1,6 +1,6 @@
 ####################### LakeCat protected area analysis ########################################
 # Date: 11-26-18
-# updated: 12-13-18
+# updated: 2-5-18
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -461,14 +461,14 @@ box_df <- subset(box_df, value > 0)
 boxplot(value ~ variable, data=box_df, las=1)
 
 #violin plot
-v1 <- subset(PADUS_LakeCat, PctGAP_Status12Cat > 0)
-v1 <- v1$PctGAP_Status12Cat
-v2 <- subset(PADUS_LakeCat, PctGAP_Status123Cat > 0)
-v2 <- v2$PctGAP_Status123Cat
-v3 <- subset(PADUS_LakeCat, PctGAP_Status12Ws > 0)
-v3 <- v3$PctGAP_Status12Ws
-v4 <- subset(PADUS_LakeCat, PctGAP_Status123Ws > 0)
-v4 <- v4$PctGAP_Status123Ws
+#v1 <- subset(PADUS_LakeCat, PctGAP_Status12Cat > 0)
+v1 <- na.omit(PADUS_LakeCat$PctGAP_Status12Cat)
+#v2 <- subset(PADUS_LakeCat, PctGAP_Status123Cat > 0)
+v2 <- na.omit(PADUS_LakeCat$PctGAP_Status123Cat)
+#v3 <- subset(PADUS_LakeCat, PctGAP_Status12Ws > 0)
+v3 <- na.omit(PADUS_LakeCat$PctGAP_Status12Ws)
+#v4 <- subset(PADUS_LakeCat, PctGAP_Status123Ws > 0)
+v4 <- na.omit(PADUS_LakeCat$PctGAP_Status123Ws)
 
 # with help from: https://stackoverflow.com/questions/19416768/vioplot-r-how-to-set-axis-labels 
 ## set up empty plot
@@ -476,8 +476,8 @@ png("C:/Ian_GIS/FreshwaterConservation/ProtectedAreas_paper_figs/violin_pct_prot
 par(las=1,bty="l")  ## my preferred setting
 plot(0.5:5,0.5:5,type="n",ylim=c(0,100),
      axes=FALSE,ann=FALSE)
-vioplot(v1,v2,v3,v4,add=T, col='gold')
-axis(side=1,at=1:4,labels=c('GAPS 1-2, Cat', 'GAPS 1-3, Cat', 'GAPS 1-2, Ws', 'GAPS 1-3, Ws'))
+vioplot(v1,v2,v3,v4,add=T, col='gray70')
+axis(side=1,at=1:4,labels=c('Strict, Cat', 'Multi-use, Cat', 'Strict, Ws', 'Multi-use, Ws'))
 axis(side=2,at=seq(0,100,10),labels=seq(0,100,10))
 title('Percent protected')
 dev.off()

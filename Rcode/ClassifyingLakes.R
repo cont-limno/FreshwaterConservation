@@ -1,6 +1,6 @@
 ####################### Classifying US lakes based on LAGOS and LakeCat ########################
 # Date: 1-7-19
-# updated: 1-9-19
+# updated: 2-1-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -51,6 +51,9 @@ WetIndex <- read.csv("C:/Ian_GIS/LakeCat/WetIndx.csv")
 #Impervious <- read.csv("C:/Ian_GIS/LakeCat/ImperviousSurfaces2011.csv")
 Runoff <- read.csv("C:/Ian_GIS/LakeCat/Runoff.csv")
 Baseflow <- read.csv("C:/Ian_GIS/LakeCat/BFI.csv")
+
+# X-walk table for linking NHD to LAGOS lakes
+xwalk <- read.csv("C:/Ian_GIS/FreshwaterConservation/LAGOS_Lake_Link_v1.csv")
 
 #### D-fine constants ####
 min_protected <- 0 # keep data points (lake catchments) with percent protected above this value
@@ -206,6 +209,10 @@ var_list <- c('COMID','CatAreaSqKm','AREASQKM','ElevCat','WetIndexCat','PctConif
               'RunoffCat','BFICat','Precip8110Cat','Tmean8110Cat','SDF','LandForm')
 #baby <- baby[,c(var_list)]
 full_cluster_data <- big_mama_table[,c(var_list)]
+
+# add in lake connectivity classes from LAGOS
+
+
 
 #cor(baby[,2:(ncol(baby)-1)], method='pearson')
 cor(full_cluster_data[,2:(ncol(full_cluster_data)-1)], method='pearson')
