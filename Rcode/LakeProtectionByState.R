@@ -1,6 +1,6 @@
 ####################### Lake protection by US state and NARS ecoregion #########################
 # Date: 12-5-18
-# updated: 2-5-19
+# updated: 2-6-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -331,7 +331,17 @@ LakeProtection_byState_Export <- data.frame(State=LakeProtection_byState$State, 
                                             PP_Cat_Gaps123=paste0(LakeProtection_byState$PPCat_123_75, ', ', LakeProtection_byState$PPCat_123_90, ', ', LakeProtection_byState$PPCat_123_100),
                                             PP_Ws_Gaps123=paste0(LakeProtection_byState$PPWs_123_75, ', ', LakeProtection_byState$PPWs_123_90, ', ', LakeProtection_byState$PPWs_123_100))
 
-#write.csv(LakeProtection_byState_Export, file='Data/LakeProtection_byState.csv')
+
+
+StateProtection75_Export <- protected_lakes_75pct[,c(1:4,7,8)]
+StateProtection75_Export$PropProtected_gap12Cat <- round(StateProtection75_Export$PropProtected_gap12Cat,2)
+StateProtection75_Export$PropProtected_gap123Cat <- round(StateProtection75_Export$PropProtected_gap123Cat,2)
+colnames(StateProtection75_Export) <- c('State','nLakes','Protected_strict','Protected_multi','PropProtected_strict','PropProtected_multi')
+StateProtection75_Export$Protected_strict <- paste0(StateProtection75_Export$Protected_strict, ' (',StateProtection75_Export$PropProtected_strict,')')
+StateProtection75_Export$Protected_multi <- paste0(StateProtection75_Export$Protected_multi, ' (',StateProtection75_Export$PropProtected_multi,')')
+StateProtection75_Export <- StateProtection75_Export[,c(1:4)]
+
+#write.csv(StateProtection75_Export, file='Data/LakeProtection_byState.csv')
 
 # Barplots of lake protection by state
 #barplot_df <- data.frame(State=LakeProtection_byState$State, PP75=LakeProtection_byState$PPCat_12_75, PP90=LakeProtection_byState$PPCat_12_90, PP100=LakeProtection_byState$PPCat_12_100)
@@ -426,7 +436,15 @@ LakeProtection_byRegion_Export <- data.frame(region=LakeProtection_byRegion$Regi
                                              PP_Cat_Gaps123=paste0(LakeProtection_byRegion$PPCat_123_75, ', ', LakeProtection_byRegion$PPCat_123_90, ', ', LakeProtection_byRegion$PPCat_123_100),
                                              PP_Ws_Gaps123=paste0(LakeProtection_byRegion$PPWs_123_75, ', ', LakeProtection_byRegion$PPWs_123_90, ', ', LakeProtection_byRegion$PPWs_123_100))
 
-#write.csv(LakeProtection_byRegion_Export, file='Data/LakeProtection_byNARSRegion.csv')
+RegionProtection75_Export <- protected_lakes_NARS_75pct[,c(1:4,7,8)]
+RegionProtection75_Export$PropProtected_gap12Cat <- round(RegionProtection75_Export$PropProtected_gap12Cat,2)
+RegionProtection75_Export$PropProtected_gap123Cat <- round(RegionProtection75_Export$PropProtected_gap123Cat,2)
+colnames(RegionProtection75_Export) <- c('Region','nLakes','Protected_strict','Protected_multi','PropProtected_strict','PropProtected_multi')
+RegionProtection75_Export$Protected_strict <- paste0(RegionProtection75_Export$Protected_strict, ' (',RegionProtection75_Export$PropProtected_strict,')')
+RegionProtection75_Export$Protected_multi <- paste0(RegionProtection75_Export$Protected_multi, ' (',RegionProtection75_Export$PropProtected_multi,')')
+RegionProtection75_Export <- RegionProtection75_Export[,c(1:4)]
+
+#write.csv(RegionProtection75_Export, file='Data/LakeProtection_byNARSRegion.csv')
 
 # Barplots of lake protection by region
 #barplot_df <- data.frame(Region=LakeProtection_byRegion$Region, PP75=LakeProtection_byRegion$PPCat_12_75, PP90=LakeProtection_byRegion$PPCat_12_90, PP100=LakeProtection_byRegion$PPCat_12_100)
