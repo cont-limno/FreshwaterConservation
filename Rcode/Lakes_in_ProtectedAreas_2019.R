@@ -144,18 +144,22 @@ par(mfrow=c(2,2))
 vioplot(na.omit(PADUS_protected_GAPS12$PctGAP_Status12Cat),na.omit(PADUS_unprotected_GAPS12$PctGAP_Status12Cat), 
         names=c('Protected','Unprotected'), col='gray50')
 title('GAPS12, Cat')
+mtext(side=3, 'Strict', cex=0.75)
 
 vioplot(na.omit(PADUS_protected_GAPS12$PctGAP_Status12Ws),na.omit(PADUS_unprotected_GAPS12$PctGAP_Status12Ws), 
         names=c('Protected','Unprotected'), col='gray50')
 title('GAPS12, Ws')
+mtext(side=3, 'Multi-use', cex=0.75)
 
 vioplot(na.omit(PADUS_protected_GAPS123$PctGAP_Status123Cat),na.omit(PADUS_unprotected_GAPS123$PctGAP_Status123Cat), 
         names=c('Protected','Unprotected'), col='gray50')
 title('GAPS123, Cat')
+mtext(side=3, 'Strict', cex=0.75)
 
 vioplot(na.omit(PADUS_protected_GAPS123$PctGAP_Status123Ws),na.omit(PADUS_unprotected_GAPS123$PctGAP_Status123Ws), 
         names=c('Protected','Unprotected'), col='gray50')
 title('GAPS123, Ws')
+mtext(side=3, 'Multi-use', cex=0.75)
 
 ### now see if protected vs. unprotected lakes have different characteristics
 # calculate total LULC variables
