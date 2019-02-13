@@ -8,6 +8,7 @@
 library(raster)
 library(reshape2)
 library(vioplot)
+library(rgdal)
 
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
@@ -78,6 +79,30 @@ PADUS_protected_GAPS12 <- subset(PADUS_LakeCat, COMID %in% protected_GAPS12_COMI
 PADUS_protected_GAPS123 <- subset(PADUS_LakeCat, COMID %in% protected_GAPS123_COMID)
 PADUS_unprotected_GAPS12 <- subset(PADUS_LakeCat, COMID %in% unprotected_GAPS12_COMID)
 PADUS_unprotected_GAPS123 <- subset(PADUS_LakeCat, COMID %in% unprotected_GAPS123_COMID)
+
+# Export shapefiles of % protected for mapping in ArcGIS
+# PADUS_protected_GAPS12_export <- merge(protected_GAPS12, PADUS_protected_GAPS12, by='COMID', all.x=F)
+# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
+# layername <- "NHD_protect_pts_GAPS12_pct"
+# writeOGR(PADUS_protected_GAPS12_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+# 
+# PADUS_protected_GAPS123_export <- merge(protected_GAPS123, PADUS_protected_GAPS123, by='COMID', all.x=F)
+# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
+# layername <- "NHD_protect_pts_GAPS123_pct"
+# writeOGR(PADUS_protected_GAPS123_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+# 
+# PADUS_unprotected_GAPS12_export <- merge(unprotected_GAPS12, PADUS_unprotected_GAPS12, by='COMID', all.x=F)
+# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
+# layername <- "NHD_unprotect_pts_GAPS12_pct"
+# writeOGR(PADUS_unprotected_GAPS12_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+# 
+# PADUS_unprotected_GAPS123_export <- merge(unprotected_GAPS123, PADUS_unprotected_GAPS123, by='COMID', all.x=F)
+# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
+# layername <- "NHD_unprotect_pts_GAPS123_pct"
+# writeOGR(PADUS_unprotected_GAPS123_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+
+
+
 
 ### Basic plots: do lakes in protected areas have protected catchments and watersheds?
 par(mfrow=c(2,2))
@@ -569,6 +594,7 @@ PADUS_protected_GAPS123_Toxic <- merge(PADUS_protected_GAPS123, Toxic, by='COMID
 PADUS_unprotected_GAPS12_Toxic <- merge(PADUS_unprotected_GAPS12, Toxic, by='COMID', all.x=F) 
 PADUS_unprotected_GAPS123_Toxic <- merge(PADUS_unprotected_GAPS123, Toxic, by='COMID', all.x=F)
 
+# Superfund sites
 par(mfrow=c(2,2))
 vioplot(na.omit(PADUS_protected_GAPS12_Toxic$SuperfundDensCat),na.omit(PADUS_unprotected_GAPS12_Toxic$SuperfundDensCat), 
         names=c('Protected','Unprotected'), col='gray50')
@@ -590,6 +616,7 @@ vioplot(na.omit(PADUS_protected_GAPS123_Toxic$SuperfundDensWs),na.omit(PADUS_unp
 title('Superfund, Ws')
 mtext(side=3, 'Multi-use', cex=0.75)
 
+# TRI sites
 par(mfrow=c(2,2))
 vioplot(na.omit(PADUS_protected_GAPS12_Toxic$TRIDensCat),na.omit(PADUS_unprotected_GAPS12_Toxic$TRIDensCat), 
         names=c('Protected','Unprotected'), col='gray50')
@@ -611,6 +638,7 @@ vioplot(na.omit(PADUS_protected_GAPS123_Toxic$TRIDensWs),na.omit(PADUS_unprotect
 title('TRI sites, Ws')
 mtext(side=3, 'Multi-use', cex=0.75)
 
+# NPDES sites
 par(mfrow=c(2,2))
 vioplot(na.omit(PADUS_protected_GAPS12_Toxic$NPDESDensCat),na.omit(PADUS_unprotected_GAPS12_Toxic$NPDESDensCat), 
         names=c('Protected','Unprotected'), col='gray50')
@@ -630,4 +658,38 @@ mtext(side=3, 'Multi-use', cex=0.75)
 vioplot(na.omit(PADUS_protected_GAPS123_Toxic$NPDESDensWs),na.omit(PADUS_unprotected_GAPS123_Toxic$NPDESDensWs), 
         names=c('Protected','Unprotected'), col='gray50')
 title('NPDES sites, Ws')
+mtext(side=3, 'Multi-use', cex=0.75)
+
+# Catchment, watershed area
+par(mfrow=c(2,2))
+vioplot(na.omit(PADUS_protected_GAPS12_Toxic$CatAreaSqKm),na.omit(PADUS_unprotected_GAPS12_Toxic$CatAreaSqKm), 
+        names=c('Protected','Unprotected'), col='gray50')
+title('Area, Cat')
+mtext(side=3, 'Strict', cex=0.75)
+
+vioplot(na.omit(PADUS_protected_GAPS12_Toxic$WsAreaSqKm),na.omit(PADUS_unprotected_GAPS12_Toxic$WsAreaSqKm), 
+        names=c('Protected','Unprotected'), col='gray50')
+title('Area, Ws')
+mtext(side=3, 'Strict', cex=0.75)
+
+vioplot(na.omit(PADUS_protected_GAPS123_Toxic$CatAreaSqKm),na.omit(PADUS_unprotected_GAPS123_Toxic$CatAreaSqKm), 
+        names=c('Protected','Unprotected'), col='gray50')
+title('Area, Cat')
+mtext(side=3, 'Multi-use', cex=0.75)
+
+vioplot(na.omit(PADUS_protected_GAPS123_Toxic$WsAreaSqKm),na.omit(PADUS_unprotected_GAPS123_Toxic$WsAreaSqKm), 
+        names=c('Protected','Unprotected'), col='gray50')
+title('Area, Ws')
+mtext(side=3, 'Multi-use', cex=0.75)
+
+# LAKE AREA
+par(mfrow=c(2,2))
+vioplot(na.omit(protected_GAPS12@data$AREASQKM),na.omit(unprotected_GAPS12@data$AREASQKM), 
+        names=c('Protected','Unprotected'), col='gray50')
+title('Lake Area')
+mtext(side=3, 'Strict', cex=0.75)
+
+vioplot(na.omit(protected_GAPS123@data$AREASQKM),na.omit(unprotected_GAPS123@data$AREASQKM), 
+        names=c('Protected','Unprotected'), col='gray50')
+title('Lake Area')
 mtext(side=3, 'Multi-use', cex=0.75)
