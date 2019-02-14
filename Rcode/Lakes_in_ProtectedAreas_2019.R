@@ -1,6 +1,6 @@
 ####################### Characteristics of lakes in US protected areas #########################
 # Date: 2-12-19
-# updated:
+# updated: 2-14-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -9,6 +9,7 @@ library(raster)
 library(reshape2)
 library(vioplot)
 library(rgdal)
+library(gridExtra)
 
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
@@ -80,6 +81,10 @@ PADUS_protected_GAPS123 <- subset(PADUS_LakeCat, COMID %in% protected_GAPS123_CO
 PADUS_unprotected_GAPS12 <- subset(PADUS_LakeCat, COMID %in% unprotected_GAPS12_COMID)
 PADUS_unprotected_GAPS123 <- subset(PADUS_LakeCat, COMID %in% unprotected_GAPS123_COMID)
 
+## What proportion of lakes is protected (simply falls within a protected area)?
+nrow(PADUS_protected_GAPS12)/(nrow(PADUS_protected_GAPS12) + nrow(PADUS_unprotected_GAPS12))
+nrow(PADUS_protected_GAPS123)/(nrow(PADUS_protected_GAPS123) + nrow(PADUS_unprotected_GAPS123))
+
 # Export shapefiles of % protected for mapping in ArcGIS
 # PADUS_protected_GAPS12_export <- merge(protected_GAPS12, PADUS_protected_GAPS12, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
@@ -102,19 +107,26 @@ PADUS_unprotected_GAPS123 <- subset(PADUS_LakeCat, COMID %in% unprotected_GAPS12
 # writeOGR(PADUS_unprotected_GAPS123_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
 
 
-
-
 ### Basic plots: do lakes in protected areas have protected catchments and watersheds?
 par(mfrow=c(2,2))
-hist(PADUS_protected_GAPS12$PctGAP_Status12Cat, xlab='GAPS12, Cat', main='Protected lakes')
-hist(PADUS_protected_GAPS12$PctGAP_Status12Ws, xlab='GAPS12, Ws', main='Protected lakes')
-hist(PADUS_protected_GAPS123$PctGAP_Status123Cat, xlab='GAPS123, Cat', main='Protected lakes')
-hist(PADUS_protected_GAPS123$PctGAP_Status123Ws, xlab='GAPS123, Ws', main='Protected lakes')
+hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+hist(PADUS_protected_GAPS12$PctGAP_Status12Cat, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
+     col=hist_colors, ylim=c(0,40000))
+mtext(side=3, 'Strict, Cat', cex=0.75)
+hist(PADUS_protected_GAPS12$PctGAP_Status12Ws, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
+     col=hist_colors, ylim=c(0,40000))
+mtext(side=3, 'Strict, Ws', cex=0.75)
+hist(PADUS_protected_GAPS123$PctGAP_Status123Cat, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
+     col=hist_colors, ylim=c(0,40000))
+mtext(side=3, 'Multi-use, Cat', cex=0.75)
+hist(PADUS_protected_GAPS123$PctGAP_Status123Ws, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
+     col=hist_colors, ylim=c(0,40000))
+mtext(side=3, 'Multi-use, Ws', cex=0.75)
 
-hist(PADUS_unprotected_GAPS12$PctGAP_Status12Cat, xlab='GAPS12, Cat', main='Unprotected lakes')
-hist(PADUS_unprotected_GAPS12$PctGAP_Status12Ws, xlab='GAPS12, Ws', main='Unprotected lakes')
-hist(PADUS_unprotected_GAPS123$PctGAP_Status123Cat, xlab='GAPS123, Cat', main='Unprotected lakes')
-hist(PADUS_unprotected_GAPS123$PctGAP_Status123Ws, xlab='GAPS123, Ws', main='Unprotected lakes')
+hist(PADUS_unprotected_GAPS12$PctGAP_Status12Cat, xlab='GAPS12, Cat', main='Unprotected lakes',breaks=seq(0,100,20))
+hist(PADUS_unprotected_GAPS12$PctGAP_Status12Ws, xlab='GAPS12, Ws', main='Unprotected lakes',breaks=seq(0,100,20))
+hist(PADUS_unprotected_GAPS123$PctGAP_Status123Cat, xlab='GAPS123, Cat', main='Unprotected lakes',breaks=seq(0,100,20))
+hist(PADUS_unprotected_GAPS123$PctGAP_Status123Ws, xlab='GAPS123, Ws', main='Unprotected lakes',breaks=seq(0,100,20))
 
 # # combine protected and unprotected lakes into single data frame
 # PADUS_protected_GAPS12$Protected <- 'Protected'
@@ -697,3 +709,194 @@ vioplot(na.omit(protected_GAPS123@data$AREASQKM),na.omit(unprotected_GAPS123@dat
         names=c('Protected','Unprotected'), col='gray50')
 title('Lake Area')
 mtext(side=3, 'Multi-use', cex=0.75)
+
+######## Experimenting with multi-panel/fancier violin/box plotz ####
+library(ggpubr)
+plot_colorz <- c('forestgreen','tan','gray40')
+
+# LAKE AREA
+temp_a <- protected_GAPS12@data
+temp_a$Protection <- 'Strict'
+temp_b <- protected_GAPS123@data
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- unprotected_GAPS123@data
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+temp_df_melted <- temp_df[,c('AREASQKM','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+
+letang <- ggplot(temp_df_melted, aes(x=Protection, y=log(value), fill=Protection)) + 
+  geom_violin() + 
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Lake area",x="", y = "")
+
+# par(mfrow=c(1,1))
+# temp_df$Protection <- factor(temp_df$Protection, levels=c("Strict", "Multi-use", "Unprotected")) #reorder boxes
+# boxplot(AREASQKM ~ Protection, data=temp_df, las=1, main='Lake area (sq km)', col=plot_colorz, ylim=c(0,5))
+# 
+# 
+# area_boxplot <- ggboxplot(temp_df, x = "Protection",
+#          y = c("AREASQKM"),
+#          combine = T, 
+#          color = "Protection", palette = "jco",
+#          ylab = "Sq km", 
+#          add = "median_iqr")
+# 
+# ggpar(area_boxplot, legend='none', ylim=c(0,1))
+
+# CLIMATE
+temp_a <- na.omit(PADUS_protected_GAPS12_PRISM)
+temp_a$Protection <- 'Strict'
+temp_b <- na.omit(PADUS_protected_GAPS123_PRISM)
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- na.omit(PADUS_unprotected_GAPS123_PRISM)
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+# http://www.sthda.com/english/wiki/print.php?id=132
+#library(devtools)
+#install_github("kassambara/easyGgplot2")
+#library(easyGgplot2)
+temp_df_melted <- temp_df[,c('Precip8110Cat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+
+dupuis <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() + 
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Precipitation",x="", y = "")
+
+temp_df_melted <- temp_df[,c('Tmean8110Cat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+crosby <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Temperature",x="", y = "")
+
+grid.arrange(dupuis, crosby, nrow=1)
+
+# LULC
+temp_a <- PADUS_protected_GAPS12_NLCD
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_NLCD
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_NLCD
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+ploht <- ggboxplot(temp_df, x = "Protection",
+                   y = c("PctTotalForest2011Cat", "PctTotalAg2011Cat", "PctTotalWetland2011Cat"),
+                   combine = T,
+                   ylab = "Percent",
+                   color = "Protection", palette = plot_colorz, xlab=F)
+ggpar(ploht, legend='none')
+
+temp_df_melted <- temp_df[,c('PctTotalForest2011Cat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+malkin <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Forest",x="", y = "")
+
+temp_df_melted <- temp_df[,c('PctTotalAg2011Cat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+kunitz <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Agriculture",x="", y = "")
+
+temp_df_melted <- temp_df[,c('PctTotalWetland2011Cat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+fleury <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Wetlands",x="", y = "")
+
+grid.arrange(malkin, kunitz, fleury, nrow=1)
+
+# Toxic stuff
+temp_a <- PADUS_protected_GAPS12_Toxic
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_Toxic
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_Toxic
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+temp_df_melted <- temp_df[,c('SuperfundDensCat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+dumo <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Superfund",x="", y = "")
+
+temp_df_melted <- temp_df[,c('TRIDensCat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+dumo <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="TRI",x="", y = "")
+
+# too slow
+# ggdensity(temp_df,
+#           x = c("PctTotalForest2011Cat", "PctTotalAg2011Cat", "PctTotalWetland2011Cat"),
+#           y = "..density..",
+#           combine = T,                  # Combine the 3 plots
+#           xlab = "Percent", 
+#           add = "median",                  # Add median line. 
+#           rug = T,                      # Add marginal rug
+#           color = "Protection", 
+#           fill = "Protection",
+#           palette = c('forestgreen','tan','gray40'))
+
