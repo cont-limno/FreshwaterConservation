@@ -1,6 +1,6 @@
 ############### Terrestrial and hydrologic lake connectivity indices ###########################
 # Date: 1-3-19
-# updated: 1-23-19
+# updated: 2-15-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -210,12 +210,12 @@ jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.
 combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
   geom_point(aes(colour=gg_sub$hydro_terr), size=1, colour='black') +
   #geom_abline(intercept=0, slope=1, color='black', size=1) + #1:1 fit line
-  geom_hline(yintercept=5, color='black', linetype='dashed', size=1) +
-  geom_vline(xintercept=5, color='black', linetype='dashed', size=1) +
-  annotate("text", x=0, y=10, label='A)', size=4)+
-  annotate("text", x=0, y=4.6, label='C)', size=4)+
-  annotate("text", x=5.5, y=10, label='B)', size=4)+
-  annotate("text", x=5.5, y=4.6, label='D)', size=4)+
+  geom_hline(yintercept=1.24, color='black', linetype='dashed', size=1) + #had been 5
+  geom_vline(xintercept=1.77, color='black', linetype='dashed', size=1) + #had been 5
+  #annotate("text", x=0, y=10, label='A)', size=4)+
+  #annotate("text", x=0, y=4.6, label='C)', size=4)+
+  #annotate("text", x=5.5, y=10, label='B)', size=4)+
+  #annotate("text", x=5.5, y=4.6, label='D)', size=4)+
   ggtitle('')
 combined_scores.point3$labels$colour = 'Combined score' # change legend title
 combined_scores.point3 +
@@ -434,11 +434,12 @@ colnames(hydro_terr_conn_char)[2:3] <- c('PChydroall','PCterrall')
 #hydro_terr_conn_char$ScoreGroup <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(seq(0,10,2),24))
 #hydro_terr_conn_char$ScoreGroup <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(0,2,5,13))
 # Create new column that divides data into quadrants per conceptual model, using 5 as the cutoff
-score_cutoff <- 5
-hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > score_cutoff & hydro_terr_conn_char$PCterrall < score_cutoff, 'QA',NA)
-hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall < score_cutoff & hydro_terr_conn_char$PCterrall < score_cutoff, 'QC',hydro_terr_conn_char$Quadrant)
-hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > score_cutoff & hydro_terr_conn_char$PCterrall > score_cutoff, 'QB',hydro_terr_conn_char$Quadrant)
-hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall < score_cutoff & hydro_terr_conn_char$PCterrall > score_cutoff, 'QD',hydro_terr_conn_char$Quadrant)
+hydro_score_cutoff <- 1.24 #had been 5
+terr_score_cutoff <- 1.77 #had been 5
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > hydro_score_cutoff & hydro_terr_conn_char$PCterrall < terr_score_cutoff, 'QA',NA)
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall < hydro_score_cutoff & hydro_terr_conn_char$PCterrall < terr_score_cutoff, 'QC',hydro_terr_conn_char$Quadrant)
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > hydro_score_cutoff & hydro_terr_conn_char$PCterrall > terr_score_cutoff, 'QB',hydro_terr_conn_char$Quadrant)
+hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall < hydro_score_cutoff & hydro_terr_conn_char$PCterrall > terr_score_cutoff, 'QD',hydro_terr_conn_char$Quadrant)
 
 # number of lakes per conn score group
 hydro_terr_conn_char %>% 

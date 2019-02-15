@@ -20,6 +20,7 @@ lower48 <- shapefile("C:/Ian_GIS/cb_2016_us_state_500k/lower48.shp") #same crs a
 #### Protected and unprotected lakes (centroids) ####
 protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS12.shp")
 protected_GAPS123 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS123.shp")
+protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAP3only.shp")
 
 unprotected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_unprotect_pts_GAPS12.shp")
 unprotected_GAPS123 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_unprotect_pts_GAPS123.shp")
@@ -54,6 +55,7 @@ lake_sqkm_cutoff <- 0.01 #=1ha
 # remove lakes smaller than minimum threshold
 protected_GAPS12 <- subset(protected_GAPS12, AREASQKM >= lake_sqkm_cutoff)
 protected_GAPS123 <- subset(protected_GAPS123, AREASQKM >= lake_sqkm_cutoff)
+protected_GAP3only <- subset(protected_GAP3only, AREASQKM >= lake_sqkm_cutoff)
 
 unprotected_GAPS12 <- subset(unprotected_GAPS12, AREASQKM >= lake_sqkm_cutoff)
 unprotected_GAPS123 <- subset(unprotected_GAPS123, AREASQKM >= lake_sqkm_cutoff)
@@ -61,6 +63,7 @@ unprotected_GAPS123 <- subset(unprotected_GAPS123, AREASQKM >= lake_sqkm_cutoff)
 # get COMIDs for lakes
 protected_GAPS12_COMID <- protected_GAPS12@data$COMID
 protected_GAPS123_COMID <- protected_GAPS123@data$COMID
+protected_GAP3only_COMID <- protected_GAP3only$COMID
 
 unprotected_GAPS12_COMID <- unprotected_GAPS12@data$COMID
 unprotected_GAPS123_COMID <- unprotected_GAPS123@data$COMID
@@ -161,17 +164,27 @@ mtext(side=3, 'Strict', cex=0.75)
 vioplot(na.omit(PADUS_protected_GAPS12$PctGAP_Status12Ws),na.omit(PADUS_unprotected_GAPS12$PctGAP_Status12Ws), 
         names=c('Protected','Unprotected'), col='gray50')
 title('GAPS12, Ws')
-mtext(side=3, 'Multi-use', cex=0.75)
+mtext(side=3, 'Strict', cex=0.75)
 
 vioplot(na.omit(PADUS_protected_GAPS123$PctGAP_Status123Cat),na.omit(PADUS_unprotected_GAPS123$PctGAP_Status123Cat), 
         names=c('Protected','Unprotected'), col='gray50')
 title('GAPS123, Cat')
-mtext(side=3, 'Strict', cex=0.75)
+mtext(side=3, 'Multi-use', cex=0.75)
 
 vioplot(na.omit(PADUS_protected_GAPS123$PctGAP_Status123Ws),na.omit(PADUS_unprotected_GAPS123$PctGAP_Status123Ws), 
         names=c('Protected','Unprotected'), col='gray50')
 title('GAPS123, Ws')
 mtext(side=3, 'Multi-use', cex=0.75)
+
+# lakes that fall in strictly protected areas
+par(mfrow=c(1,1))
+vioplot(na.omit(PADUS_protected_GAPS12$PctGAP_Status12Cat),na.omit(PADUS_protected_GAPS12$PctGAP_Status123Cat), 
+        names=c('Strict','Multi-use'), col='gray50')
+title('GAPS12, Cat')
+mtext(side=3, 'Strict', cex=0.75)
+
+# lakes that fall in multi-use areas (need to remove strict?)
+
 
 ### now see if protected vs. unprotected lakes have different characteristics
 # calculate total LULC variables
