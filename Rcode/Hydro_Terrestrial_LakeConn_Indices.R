@@ -12,6 +12,7 @@ library(factoextra)
 library(rgdal)
 library(plot3D)
 library(dplyr)
+library(gridExtra)
 
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
@@ -21,7 +22,8 @@ patch_statz <- read.csv("Data/MichiganLakePatchStats_wBorderStates.csv")
 cost_dist <- read.csv("Data/CostDist_Mich_4ha_lakes_2020mBuff.csv")
 
 # Michigan shapefile
-mich_shp <- shapefile("C:/Ian_GIS/LAGOS-NE-GISv1.0/STATE/Michigan.shp")
+#mich_shp <- shapefile("C:/Ian_GIS/LAGOS-NE-GISv1.0/STATE/Michigan.shp")
+mich_shp <- shapefile("C:/Ian_GIS/LAGOS-NE-GISv1.0/STATE/Michigan_NoIsleRoyale.shp")
 
 # LAGOS NE lakes
 lakes_4ha_poly <- shapefile("C:/Ian_GIS/LAGOS-NE-GISv1.0/LAGOS_NE_All_Lakes_4ha/LAGOS_NE_All_Lakes_4ha.shp")
@@ -208,10 +210,10 @@ scatterD3(x = hydro_terr_conn_df$PCterrall, y = hydro_terr_conn_df$PChydroall, x
 gg_sub <- subset(hydro_terr_conn_df, hydro_terr <= 10)
 jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
 combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
-  geom_point(aes(colour=gg_sub$hydro_terr), size=1, colour='black') +
-  #geom_abline(intercept=0, slope=1, color='black', size=1) + #1:1 fit line
-  geom_hline(yintercept=1.24, color='black', linetype='dashed', size=1) + #had been 5
-  geom_vline(xintercept=1.77, color='black', linetype='dashed', size=1) + #had been 5
+  geom_point(aes(colour=gg_sub$hydro_terr), size=1) +
+  geom_abline(intercept=0, slope=1, color='black', size=1) + #1:1 fit line
+  #geom_hline(yintercept=1.24, color='black', linetype='dashed', size=1) + #had been 5
+  #geom_vline(xintercept=1.77, color='black', linetype='dashed', size=1) + #had been 5
   #annotate("text", x=0, y=10, label='A)', size=4)+
   #annotate("text", x=0, y=4.6, label='C)', size=4)+
   #annotate("text", x=5.5, y=10, label='B)', size=4)+
@@ -221,9 +223,9 @@ combined_scores.point3$labels$colour = 'Combined score' # change legend title
 combined_scores.point3 +
   scale_x_continuous(name="Semi-aquatic connectivity", limits=c(0, 10)) +
   scale_y_continuous(name="Aquatic connectivity", limits=c(0, 10)) +
-  #scale_color_gradient(low='firebrick1', high='dodgerblue')+
+  scale_color_gradient(low='firebrick1', high='dodgerblue')+
   theme_classic() +
-  theme(legend.position=c(0.9,0.75))+
+  theme(legend.position=c(0.9,0.5))+
   theme(legend.key.size=unit(0.15,"in"))+
   theme(legend.text=element_text(size=7))+
   theme(legend.title=element_text(color='black', size=8))+
@@ -286,30 +288,69 @@ PADUS_buff_conn <- rbind.data.frame(PADUS_buff_conn, MI_lakes_buff_unprotected)
   par(mfrow=c(2,2))
   # PLOT A
   par(mar=c(4,4,2,0.5)) #bot,left,top,right
-  plot(GAP12_IWS_pct ~ PChydroall, data=PADUS_IWS_conn, pch=20, las=1, ylab='Proportion watershed protected',
-     xlab='Hydrologic conn index', main='A) GAPS 1-2', xlim=c(0,10))
+  plot(GAP12_IWS_pct ~ PChydroall, data=PADUS_IWS_conn, pch=20, las=1, ylab='Watershed proportion protected',
+     xlab='', main='Strict', xlim=c(0,10))
   corplot <- round(cor(PADUS_IWS_conn$GAP12_IWS_pct, PADUS_IWS_conn$PChydroall, method='pearson', use='pairwise.complete.obs'),2)
   legend('topright', legend=paste0("r = ", corplot), bty='n', cex=0.8)
+  text(x=0, y=0.95, 'A)', font=2, cex=1)
+  title(xlab='Aquatic connectivity score', line=2)
   # PLOT B
   par(mar=c(4,0.5,2,4)) #bot,left,top,right
   plot(GAP123_IWS_pct ~ PChydroall, data=PADUS_IWS_conn, pch=20, las=1, ylab='',
-     xlab='Hydrologic conn index', main='B) GAPS 1-3', xlim=c(0,10), yaxt='n')
+     xlab='', main='Multi-use', xlim=c(0,10), yaxt='n')
   corplot <- round(cor(PADUS_IWS_conn$GAP123_IWS_pct, PADUS_IWS_conn$PChydroall, method='pearson', use='pairwise.complete.obs'),2)
-  legend('topright', legend=paste0("r = ", corplot), bty='n', cex=0.8)
+  legend('bottomright', legend=paste0("r = ", corplot), bty='n', cex=0.8)
+  text(x=0, y=0.95, 'B)', font=2, cex=1)
+  title(xlab='Aquatic connectivity score', line=2)
   # PLOT C
   par(mar=c(4,4,2,0.5)) #bot,left,top,right
-  plot(GAP12_buff_pct ~ PCterrall, data=PADUS_buff_conn, pch=20, las=1, ylab='Proportion buffer protected',
-     xlab='Terrestrial conn index', main='C) GAPS 1-2', xlim=c(0,10))
+  plot(GAP12_buff_pct ~ PCterrall, data=PADUS_buff_conn, pch=20, las=1, ylab='Buffer proportion protected',
+     xlab='', main='Strict', xlim=c(0,10))
   corplot <- round(cor(PADUS_buff_conn$GAP12_buff_pct, PADUS_buff_conn$PCterrall, method='pearson', use='pairwise.complete.obs'),2)
   legend('topright', legend=paste0("r = ", corplot), bty='n', cex=0.8)
+  text(x=0, y=0.95, 'C)', font=2, cex=1)
+  title(xlab='Semi-aquatic connectivity score', line=2)
   # PLOT D
   par(mar=c(4,0.5,2,4)) #bot,left,top,right
   plot(GAP123_buff_pct ~ PCterrall, data=PADUS_buff_conn, pch=20, las=1, ylab='',
-     xlab='Terrestrial conn index', main='D) GAPS 1-3', xlim=c(0,10), yaxt='n')
+     xlab='', main='Multi-use', xlim=c(0,10), yaxt='n')
   corplot <- round(cor(PADUS_buff_conn$GAP123_buff_pct, PADUS_buff_conn$PCterrall, method='pearson', use='pairwise.complete.obs'),2)
   legend('topright', legend=paste0("r = ", corplot), bty='n', cex=0.8)
+  text(x=0, y=0.95, 'D)', font=2, cex=1)
+  title(xlab='Semi-aquatic connectivity score', line=2)
 #dev.off()
 
+## panel histograms of % watershed and buffer protected
+#jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_prop_protected.jpeg',width = 6,height = 6,units = 'in',res=600)
+  par(mfrow=c(2,2))
+  # PLOT A
+  par(mar=c(4,4,2,0.5)) #bot,left,top,right
+  hist(PADUS_IWS_conn$GAP12_IWS_pct, las=1, ylab='Number of lakes',
+       xlab='', main='Strict', xlim=c(0,1), ylim=c(0,6000))
+  text(x=0.02, y=6000, 'A)', font=2, cex=1)
+  title(xlab='Watershed proportion protected', line=2)
+  # PLOT B
+  par(mar=c(4,0.5,2,4)) #bot,left,top,right
+  hist(PADUS_IWS_conn$GAP123_IWS_pct, las=1, ylab='',
+       xlab='', main='Multi-use', xlim=c(0,1), yaxt='n', ylim=c(0,6000))
+  text(x=0.02, y=6000, 'B)', font=2, cex=1)
+  title(xlab='Watershed proportion protected', line=2)
+  axis(side = 2,labels = F)
+  # PLOT C
+  par(mar=c(4,4,2,0.5)) #bot,left,top,right
+  hist(PADUS_buff_conn$GAP12_buff_pct, las=1, ylab='Number of lakes',
+       xlab='', main='Strict', xlim=c(0,1), ylim=c(0,6000))
+  text(x=0.02, y=6000, 'C)', font=2, cex=1)
+  title(xlab='Buffer proportion protected', line=2)
+  # PLOT D
+  par(mar=c(4,0.5,2,4)) #bot,left,top,right
+  hist(PADUS_buff_conn$GAP123_buff_pct, las=1, ylab='',
+       xlab='', main='Multi-use', xlim=c(0,1), yaxt='n', ylim=c(0,6000))
+  text(x=0.02, y=6000, 'D)', font=2, cex=1)
+  title(xlab='Buffer proportion protected', line=2)
+  axis(side = 2,labels = F)
+#dev.off()
+  
 ## panel histograms of conn scores
 jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_hist_conn_scores.jpeg',width = 6,height = 3,units = 'in',res=600)
   par(mfrow=c(1,3))
@@ -376,66 +417,65 @@ dev.off()
 hydro_conn_char <- merge(pca_hydro_scores, hydro_conn_df, by='lagoslakeid')
 hydro_conn_char <- hydro_conn_char[,c(1,5,7:10)]
 #hydro_conn_char$ScoreGroup <- cut(hydro_conn_char$PChydroall, breaks=c(seq(0,10,1),20))
-hydro_conn_char$ScoreGroup <- cut(hydro_conn_char$PChydroall, breaks=c(0,2,5,13))
+hydro_conn_char$ScoreGroup_Hyd <- cut(hydro_conn_char$PChydroall, breaks=c(0,2,5,13))
 
 # number of lakes per conn score group
 hydro_conn_char %>% 
-  group_by(ScoreGroup) %>%
-  summarise(nLakes=length(ScoreGroup))
+  group_by(ScoreGroup_Hyd) %>%
+  summarise(nLakes=length(ScoreGroup_Hyd))
 
 par(mfrow=c(2,2))
-boxplot(hydro_conn_char$stream_density_mperha ~ hydro_conn_char$ScoreGroup, las=1, 
+boxplot(hydro_conn_char$stream_density_mperha ~ hydro_conn_char$ScoreGroup_Hyd, las=1, 
         xlab='Hydro conn score', main='Stream density')
 
-#boxplot(hydro_conn_char$wetland_pct ~ hydro_conn_char$ScoreGroup, las=1, 
+#boxplot(hydro_conn_char$wetland_pct ~ hydro_conn_char$ScoreGroup_Hyd, las=1, 
 #        xlab='Hydro conn score', main='Wetland prop')
 
-boxplot(hydro_conn_char$connwetland_pct ~ hydro_conn_char$ScoreGroup, las=1, 
+boxplot(hydro_conn_char$connwetland_pct ~ hydro_conn_char$ScoreGroup_Hyd, las=1, 
         xlab='Hydro conn score', main='Conn wetland prop')
 
-boxplot(hydro_conn_char$shoreline_wetlands_pct ~ hydro_conn_char$ScoreGroup, las=1, 
+boxplot(hydro_conn_char$shoreline_wetlands_pct ~ hydro_conn_char$ScoreGroup_Hyd, las=1, 
         xlab='Hydro conn score', main='Shoreline wetland prop')
 
 # Terrestrial
 terr_conn_char <- merge(pca_terr_scores, terr_conn_df, by='lagoslakeid')
 terr_conn_char <- terr_conn_char[,c(1,7:11,14)]
 #terr_conn_char$ScoreGroup <- cut(terr_conn_char$PCterrall, breaks=c(seq(0,10,1),25))
-terr_conn_char$ScoreGroup <- cut(terr_conn_char$PCterrall, breaks=c(0,2,5,13))
+terr_conn_char$ScoreGroup_Ter <- cut(terr_conn_char$PCterrall, breaks=c(0,2,5,13))
 
 # number of lakes per conn score group
 terr_conn_char %>% 
-  group_by(ScoreGroup) %>%
-  summarise(nLakes=length(ScoreGroup))
+  group_by(ScoreGroup_Ter) %>%
+  summarise(nLakes=length(ScoreGroup_Ter))
 
 par(mfrow=c(2,3))
-boxplot(terr_conn_char$nLakePatches ~ terr_conn_char$ScoreGroup, las=1, 
+boxplot(terr_conn_char$nLakePatches ~ terr_conn_char$ScoreGroup_Ter, las=1, 
         xlab='Terr conn score', main='Lake patches')
 
-boxplot(terr_conn_char$LakeEdgeArea_pct ~ terr_conn_char$ScoreGroup, las=1, 
+boxplot(terr_conn_char$LakeEdgeArea_pct ~ terr_conn_char$ScoreGroup_Ter, las=1, 
         xlab='Terr conn score', main='Lake edge area prop')
 
-boxplot(terr_conn_char$nWetlandPatches ~ terr_conn_char$ScoreGroup, las=1, 
+boxplot(terr_conn_char$nWetlandPatches ~ terr_conn_char$ScoreGroup_Ter, las=1, 
         xlab='Terr conn score', main='Wetland patches')
 
-boxplot(terr_conn_char$WetlandArea_pct ~ terr_conn_char$ScoreGroup, las=1, 
+boxplot(terr_conn_char$WetlandArea_pct ~ terr_conn_char$ScoreGroup_Ter, las=1, 
         xlab='Terr conn score', main='Wetland prop')
 
-# boxplot(terr_conn_char$shape_index ~ terr_conn_char$ScoreGroup, las=1, 
+# boxplot(terr_conn_char$shape_index ~ terr_conn_char$ScoreGroup_Ter, las=1, 
 #         xlab='Terr conn score', main='Shape index')
 
-boxplot(terr_conn_char$min_cost_dist_corrected ~ terr_conn_char$ScoreGroup, las=1, 
+boxplot(terr_conn_char$min_cost_dist_corrected ~ terr_conn_char$ScoreGroup_Ter, las=1, 
         xlab='Terr conn score', main='Cost distance')
 
 # Combined hydro/terrestrial
 hydro_terr_conn_char <- merge(hydro_terr_conn_df, terr_conn_char[,c(1:8)], by='lagoslakeid')
-hydro_terr_conn_char <- merge(hydro_terr_conn_char, hydro_conn_char[,c(1:6)], by='lagoslakeid')
-hydro_terr_conn_char <- hydro_terr_conn_char[,c(1:4,6:10,13:16)]
+hydro_terr_conn_char <- merge(hydro_terr_conn_char, hydro_conn_char[,c(1:7)], by='lagoslakeid')
+hydro_terr_conn_char <- hydro_terr_conn_char[,c(1:4,6:11,13:17)]
 colnames(hydro_terr_conn_char)[2:3] <- c('PChydroall','PCterrall')
-#hydro_terr_conn_char$ScoreGroup <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(seq(0,10,2),24))
-#hydro_terr_conn_char$ScoreGroup <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(0,2,5,13))
+hydro_terr_conn_char$ScoreGroup_Comb <- cut(hydro_terr_conn_char$hydro_terr, breaks=c(0,2,5,13))
 # Create new column that divides data into quadrants per conceptual model, using 5 as the cutoff
-hydro_score_cutoff <- 1.24 #had been 5
-terr_score_cutoff <- 1.77 #had been 5
+hydro_score_cutoff <- 5 #had been 5
+terr_score_cutoff <- 5 #had been 5
 hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > hydro_score_cutoff & hydro_terr_conn_char$PCterrall < terr_score_cutoff, 'QA',NA)
 hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall < hydro_score_cutoff & hydro_terr_conn_char$PCterrall < terr_score_cutoff, 'QC',hydro_terr_conn_char$Quadrant)
 hydro_terr_conn_char$Quadrant <- ifelse(hydro_terr_conn_char$PChydroall > hydro_score_cutoff & hydro_terr_conn_char$PCterrall > terr_score_cutoff, 'QB',hydro_terr_conn_char$Quadrant)
@@ -448,7 +488,109 @@ hydro_terr_conn_char %>%
 
 dev.off()
 
+scoregroup_df <- data.frame(hydro_terr_conn_char[,c(1:4,10,15,16)])
+scoregroup_pts <- merge(lakes_4ha_pts, scoregroup_df, by.x='lagoslakei', by.y='lagoslakeid', all.x=F)
+scoregroup_df <- as.data.frame(scoregroup_pts@data)
+scoregroup_df$xCor <- scoregroup_pts@coords[,1]
+scoregroup_df$yCor <- scoregroup_pts@coords[,2]
 
+# Aquatic
+scoregroup.point1<-ggplot(scoregroup_df, aes(x=xCor,y=yCor))+
+  geom_point(aes(colour=scoregroup_df$ScoreGroup_Hyd), size=0.6) +
+  ggtitle('Aquatic')+
+  geom_path(data=mich_shp,aes(long,lat,group=group),colour='black', size=0.2) + coord_equal()+
+  scale_color_manual(values=c("gray67", "moccasin", "dodgerblue"),
+                     labels=c('Low (0-2)','Med (2-5)','High (> 5)'),
+                     name='Score')+
+  theme_bw() + 
+  theme(axis.text = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        #panel.border = element_blank(),
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        legend.position=c(0.22,0.25),
+        legend.text=element_text(colour='black', size=9),
+        plot.title=element_text(hjust=0, vjust=0, face='bold'))+
+  guides(color = guide_legend(override.aes = list(size=1.5)))#increase legend point size
+scoregroup.point1
+
+# Semi-aquatic
+scoregroup.point2<-ggplot(scoregroup_df, aes(x=xCor,y=yCor))+
+  geom_point(aes(colour=scoregroup_df$ScoreGroup_Ter), size=0.6) +
+  ggtitle('Semi-aquatic')+
+  geom_path(data=mich_shp,aes(long,lat,group=group),colour='black', size=0.2) + coord_equal()+
+  scale_color_manual(values=c("gray67", "moccasin", "dodgerblue"),
+                     labels=c('0-2','2-5','> 5'),
+                     name='Score')+
+  theme_bw() + 
+  theme(axis.text = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        #panel.border = element_blank(),
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        legend.position='none',
+        legend.text=element_text(colour='black', size=9),
+        plot.title=element_text(hjust=0, vjust=0, face='bold'))+
+  guides(color = guide_legend(override.aes = list(size=1.5)))#increase legend point size
+scoregroup.point2
+
+# Combined
+scoregroup.point3<-ggplot(scoregroup_df, aes(x=xCor,y=yCor))+
+  geom_point(aes(colour=scoregroup_df$ScoreGroup_Comb), size=0.6) +
+  ggtitle('Combined')+
+  geom_path(data=mich_shp,aes(long,lat,group=group),colour='black', size=0.2) + coord_equal()+
+  scale_color_manual(values=c("gray67", "moccasin", "dodgerblue"),
+                     labels=c('0-2','2-5','> 5'),
+                     name='Score')+
+  #annotate("text", x=0, y=100, label='Combined)', size=4)+
+  theme_bw() + 
+  theme(axis.text = element_blank(),
+        axis.line = element_blank(),
+        axis.ticks = element_blank(),
+        #panel.border = element_blank(),
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        legend.position='none',
+        legend.text=element_text(colour='black', size=9),
+        plot.title=element_text(hjust=0, vjust=0, face='bold'))+
+  guides(color = guide_legend(override.aes = list(size=1.5)))#increase legend point size
+scoregroup.point3
+
+scorehist1 <- ggplot(scoregroup_df, aes(x=PChydroall))+
+  geom_histogram(color='black', fill='white',binwidth=1)+
+  theme_bw()+
+  theme(panel.grid=element_blank(),
+        plot.title=element_text(hjust=0.5, vjust=-9, face='bold'))+
+  ggtitle('')+
+  scale_x_continuous(name='Aquatic connectivity score', limits=c(0,10), breaks=seq(1,10,1), labels=seq(1,10,1))+
+  scale_y_continuous(name='Number of lakes', limits=c(0,4500), breaks=seq(0,5000,1000), labels=seq(0,5000,1000))
+scorehist1
+
+scorehist2 <- ggplot(scoregroup_df, aes(x=PCterrall))+
+  geom_histogram(color='black', fill='white',binwidth=1)+
+  theme_bw()+
+  ggtitle('')+
+  theme(panel.grid=element_blank(),
+        plot.title=element_text(hjust=0.5, vjust=-9, face='bold'))+
+  scale_x_continuous(name='Semi-aquatic connectivity score', limits=c(0,10), breaks=seq(1,10,1), labels=seq(1,10,1))+
+  scale_y_continuous(name='Number of lakes', limits=c(0,4500), breaks=seq(0,5000,1000), labels=seq(0,5000,1000))
+scorehist2
+
+scorehist3 <- ggplot(scoregroup_df, aes(x=hydro_terr))+
+  geom_histogram(color='black', fill='white',binwidth=1)+
+  theme_bw()+
+  ggtitle('')+
+  theme(panel.grid=element_blank(),
+        plot.title=element_text(hjust=0.5, vjust=-9, face='bold'))+
+  scale_x_continuous(name='Combined connectivity score', limits=c(0,10), breaks=seq(1,10,1), labels=seq(1,10,1))+
+  scale_y_continuous(name='Number of lakes', limits=c(0,4500), breaks=seq(0,5000,1000), labels=seq(0,5000,1000))
+scorehist3
+
+jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_maps_conn_scores.jpeg',width = 6,height = 8,units = 'in',res=600)
+  grid.arrange(scoregroup.point1, scorehist1, scoregroup.point2, scorehist2, scoregroup.point3, scorehist3, nrow=3)
+dev.off()
 
 jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/panel_boxplot_conn_scores.jpeg',width = 8,height = 5,units = 'in',res=600)
 par(mfrow=c(2,4))
@@ -489,9 +631,9 @@ dev.off()
 mich_lakes_4ha_export <- merge(lakes_4ha_pts, hydro_terr_conn_char, by.x='lagoslakei', by.y='lagoslakeid', all.x=F)
 
 mich_lakes_4ha_export@data <- mich_lakes_4ha_export@data %>% 
-  select(1, 6, 12, 13, 33:45)
+  select(1, 6, 12, 13, 33:48)
 
-mich_lakes_4ha_export <- merge(mich_lakes_4ha_export, hydro_terr_conn_df[,c(1:3)], by.x='lagoslakei', by.y='lagoslakeid')
+#mich_lakes_4ha_export <- merge(mich_lakes_4ha_export, hydro_terr_conn_df[,c(1:3)], by.x='lagoslakei', by.y='lagoslakeid')
 
 # save to disk for better mapping in ArcGIS
 dsnname <- "C:/Ian_GIS/FreshwaterConservation/ConnIndices"
