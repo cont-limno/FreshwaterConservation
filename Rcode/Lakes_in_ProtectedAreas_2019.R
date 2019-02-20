@@ -901,6 +901,132 @@ dumo <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) +
   scale_fill_manual(values=plot_colorz)+
   labs(title="TRI",x="", y = "")
 
+# Mines
+temp_a <- PADUS_protected_GAPS12_mines
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_mines
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_mines
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+temp_df_melted <- temp_df[,c('MineDensCat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+murray <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Mines",x="", y = "")+
+  scale_y_continuous(limits=c(0,0.5))
+
+# Road density
+temp_a <- PADUS_protected_GAPS12_roads
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_roads
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_roads
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+temp_df_melted <- temp_df[,c('RdDensCat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+hedberg <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Rd Density",x="", y = "")
+
+# Deposition
+temp_a <- PADUS_protected_GAPS12_depos
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_depos
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_depos
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+temp_df_melted <- temp_df[,c('SN_2008Cat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+lacouture <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="SN deposition",x="", y = "")
+
+# Impervious
+temp_a <- PADUS_protected_GAPS12_imp
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_imp
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_imp
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+temp_df_melted <- temp_df[,c('PctImp2011Cat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+lange <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Impervious",x="", y = "")+
+  scale_y_continuous(limits=c(0,10))
+
+# Dams
+temp_a <- PADUS_protected_GAPS12_dams
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_dams
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_dams
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+temp_df_melted <- temp_df[,c('NABD_DensCat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+langlang <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Dams",x="", y = "")+
+  scale_y_continuous(limits=c(0,0.01))
+
+
+
+
 # too slow
 # ggdensity(temp_df,
 #           x = c("PctTotalForest2011Cat", "PctTotalAg2011Cat", "PctTotalWetland2011Cat"),
