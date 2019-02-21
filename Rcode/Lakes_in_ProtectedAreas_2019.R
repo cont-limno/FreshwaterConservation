@@ -1024,6 +1024,30 @@ langlang <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) 
   labs(title="Dams",x="", y = "")+
   scale_y_continuous(limits=c(0,0.01))
 
+# Forest loss
+temp_a <- PADUS_protected_GAPS12_forestloss
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_forestloss
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_forestloss
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+temp_df_melted <- temp_df[,c('TotalPctFrstLossCat','Protection')]
+temp_df_melted <- melt(temp_df_melted, id.vars='Protection')
+temp_df_melted$Protection <- as.factor(temp_df_melted$Protection)
+temp_df_melted$Protection <- factor(temp_df_melted$Protection,levels(temp_df_melted$Protection)[c(2,1,3)])
+potash <- ggplot(temp_df_melted, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Forest loss",x="", y = "")+
+  scale_y_continuous(limits=c(0,0.1))
 
 
 
