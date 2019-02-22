@@ -208,6 +208,7 @@ scatterD3(x = hydro_terr_conn_df$PCterrall, y = hydro_terr_conn_df$PChydroall, x
 
 # ggplot with dots colored by combined hydro/terr conn score and outliers >= 10 removed
 gg_sub <- subset(hydro_terr_conn_df, hydro_terr <= 10)
+gg_cor <- round(cor(gg_sub$PChydroall, gg_sub$PCterrall, method='pearson'),2)
 jpeg('C:/Ian_GIS/FreshwaterConservation/Exports/Figs/colored_ggplot_conn_scores.jpeg',width = 4,height = 4,units = 'in',res=600)
 combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
   geom_point(aes(colour=gg_sub$hydro_terr), size=1) +
@@ -218,6 +219,7 @@ combined_scores.point3<-ggplot(gg_sub, aes(x=PCterrall, y=PChydroall))+
   #annotate("text", x=0, y=4.6, label='C)', size=4)+
   #annotate("text", x=5.5, y=10, label='B)', size=4)+
   #annotate("text", x=5.5, y=4.6, label='D)', size=4)+
+  annotate("text", x=8, y=10, label=paste0('r = ', gg_cor), size=3)+
   ggtitle('')
 combined_scores.point3$labels$colour = 'Combined score' # change legend title
 combined_scores.point3 +
