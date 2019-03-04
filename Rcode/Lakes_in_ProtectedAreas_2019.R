@@ -1187,6 +1187,57 @@ WetIndex_violin <- ggplot(WetIndex_df, aes(x=Protection, y=value, fill=Protectio
   scale_y_continuous(limits=c())
 WetIndex_violin
 
+# Runoff
+temp_a <- PADUS_protected_GAPS12_runoff
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_runoff
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_runoff
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+runoff_df <- temp_df[,c('RunoffCat','Protection')]
+runoff_df <- melt(runoff_df, id.vars='Protection')
+runoff_df$Protection <- as.factor(runoff_df$Protection)
+runoff_df$Protection <- factor(runoff_df$Protection,levels(runoff_df$Protection)[c(2,1,3)])
+runoff_violin <- ggplot(runoff_df, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Runoff",x="", y = "")+
+  scale_y_continuous(limits=c())
+
+# Baseflow
+temp_a <- PADUS_protected_GAPS12_baseflow
+temp_a$Protection <- 'Strict'
+temp_b <- PADUS_protected_GAPS123_baseflow
+temp_b$Protection <- 'Multi-use'
+temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
+temp_c <- PADUS_unprotected_GAPS123_baseflow
+temp_c$Protection <- 'Unprotected'
+
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
+temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+
+baseflow_df <- temp_df[,c('BFICat','Protection')]
+baseflow_df <- melt(baseflow_df, id.vars='Protection')
+baseflow_df$Protection <- as.factor(baseflow_df$Protection)
+baseflow_df$Protection <- factor(baseflow_df$Protection,levels(baseflow_df$Protection)[c(2,1,3)])
+baseflow_violin <- ggplot(baseflow_df, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Baseflow",x="", y = "")+
+  scale_y_continuous(limits=c())
+grid.arrange(runoff_violin, baseflow_violin, nrow=1)
+
 # Percent protected
 GAP12_df <- temp_df[,c('PctGAP_Status12Cat','Protection')]
 GAP12_df <- melt(GAP12_df, id.vars='Protection')
@@ -1259,6 +1310,8 @@ superfund_statz <- summary_statz(superfund_df)
 TRI_statz <- summary_statz(TRI_df)
 NPDES_statz <- summary_statz(NPDES_df)
 WetIndex_statz <- summary_statz(WetIndex_df)
+runoff_statz <- summary_statz(runoff_df)
+baseflow_statz <- summary_statz(baseflow_df)
 GAP12_statz <- summary_statz(GAP12_df)
 GAP123_statz <- summary_statz(GAP123_df)
 
@@ -1266,5 +1319,5 @@ all_summary_statz <- rbind.data.frame(lake_area_statz, elevation_statz, catchmen
                                       forest_statz, ag_statz, wetland_statz, roads_statz, impervious_statz,
                                       forest_loss_statz, fire_statz, depos_statz, mines_statz, dams_statz,
                                       superfund_statz, TRI_statz, NPDES_statz, WetIndex_statz,
-                                      GAP12_statz, GAP123_statz)
+                                      runoff_statz, baseflow_statz, GAP12_statz, GAP123_statz)
 #write.csv(all_summary_statz, file='Data/protected_v_unprotected_stats.csv')
