@@ -132,6 +132,12 @@ hist(PADUS_unprotected_GAPS12$PctGAP_Status12Ws, xlab='GAPS12, Ws', main='Unprot
 hist(PADUS_unprotected_GAPS123$PctGAP_Status123Cat, xlab='GAPS123, Cat', main='Unprotected lakes',breaks=seq(0,100,20))
 hist(PADUS_unprotected_GAPS123$PctGAP_Status123Ws, xlab='GAPS123, Ws', main='Unprotected lakes',breaks=seq(0,100,20))
 
+# What proportion of lakes that occur in protected areas have greater than X amount of cat/watershed proteced?
+nrow(subset(PADUS_protected_GAPS12, PctGAP_Status12Cat > 80))/nrow(PADUS_protected_GAPS12)
+nrow(subset(PADUS_protected_GAPS12, PctGAP_Status12Ws > 80))/nrow(PADUS_protected_GAPS12)
+nrow(subset(PADUS_protected_GAPS123, PctGAP_Status123Cat > 80))/nrow(PADUS_protected_GAPS123)
+nrow(subset(PADUS_protected_GAPS123, PctGAP_Status123Ws > 80))/nrow(PADUS_protected_GAPS123)
+
 # # combine protected and unprotected lakes into single data frame
 # PADUS_protected_GAPS12$Protected <- 'Protected'
 # PADUS_unprotected_GAPS12$Protected <- 'Unprotected'
@@ -1312,12 +1318,14 @@ NPDES_statz <- summary_statz(NPDES_df)
 WetIndex_statz <- summary_statz(WetIndex_df)
 runoff_statz <- summary_statz(runoff_df)
 baseflow_statz <- summary_statz(baseflow_df)
+precip_statz <- summary_statz(precip_df)
+temperature_statz <- summary_statz(temperature_df)
 GAP12_statz <- summary_statz(GAP12_df)
 GAP123_statz <- summary_statz(GAP123_df)
 
 all_summary_statz <- rbind.data.frame(lake_area_statz, elevation_statz, catchment_area_statz, watershed_area_statz,
                                       forest_statz, ag_statz, wetland_statz, roads_statz, impervious_statz,
                                       forest_loss_statz, fire_statz, depos_statz, mines_statz, dams_statz,
-                                      superfund_statz, TRI_statz, NPDES_statz, WetIndex_statz,
-                                      runoff_statz, baseflow_statz, GAP12_statz, GAP123_statz)
+                                      superfund_statz, TRI_statz, NPDES_statz, WetIndex_statz, precip_statz,
+                                      temperature_statz, runoff_statz, baseflow_statz, GAP12_statz, GAP123_statz)
 #write.csv(all_summary_statz, file='Data/protected_v_unprotected_stats.csv')
