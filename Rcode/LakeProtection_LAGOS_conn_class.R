@@ -1,6 +1,6 @@
 ####################### Lake protection by LAGOS lake connectivity class #######################
 # Date: 2-7-19
-# updated: 
+# updated: 3-7-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -30,6 +30,7 @@ xwalk_reduced <- xwalk[,c('lagoslakeid','nhdplusv2_reachcode','nhdplusv2_comid')
 xwalk_reduced <- xwalk_reduced[!duplicated(xwalk_reduced$lagoslakeid),] #first remove duplicate lagoslakeids
 LAGOS_1ha_xwalk <- merge(LAGOS_1ha@data[,c('lagoslakei','LakeConnec')], xwalk_reduced, by.x='lagoslakei', by.y='lagoslakeid', all.x=F)
 LAGOS_1ha_xwalk <- LAGOS_1ha_xwalk[!duplicated(LAGOS_1ha_xwalk$nhdplusv2_comid),] #remove dup COMID
+#write.csv(LAGOS_1ha_xwalk, "Data/LakeConn_1ha_LAGOS_NHD_Xwalk.csv")
 
 NHD_pts_LAGOS1ha_conn <- merge(NHD_pts@data, LAGOS_1ha_xwalk, by.x='COMID',by.y='nhdplusv2_comid', all.x=F)
 

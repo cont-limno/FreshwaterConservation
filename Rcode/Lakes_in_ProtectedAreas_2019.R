@@ -49,6 +49,9 @@ Impervious <- read.csv("C:/Ian_GIS/LakeCat/ImperviousSurfaces2011.csv")
 Runoff <- read.csv("C:/Ian_GIS/LakeCat/Runoff.csv")
 Baseflow <- read.csv("C:/Ian_GIS/LakeCat/BFI.csv")
 
+# LAGOS conn class data
+LAGOSconn <- read.csv("Data/LakeConn_1ha_LAGOS_NHD_Xwalk.csv")
+
 #### D-fine constants ####
 lake_sqkm_cutoff <- 0.01 #=1ha
 
@@ -814,3 +817,81 @@ all_summary_statz <- rbind.data.frame(lake_area_statz, elevation_statz, catchmen
                                       superfund_statz, TRI_statz, NPDES_statz, WetIndex_statz, precip_statz,
                                       temperature_statz, runoff_statz, baseflow_statz)
 #write.csv(all_summary_statz, file='Data/protected_v_unprotected_stats.csv')
+
+############# Analyze by LAGOS conn class #################
+# Summarize conn types for all lakes
+LakeConn_countz <- as.data.frame(LAGOSconn %>%
+                                   group_by(LakeConnec) %>%
+                                   tally())
+
+barplot(LakeConn_countz$n, names.arg=LakeConn_countz$LakeConnec, las=1)
+
+# Strict protection, lake center
+protected_GAPS12_df_PADUS_conn <- merge(protected_GAPS12_df_PADUS, LAGOSconn, by.x='COMID', 
+                                        by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAPS12_conn_countz <- as.data.frame(protected_GAPS12_df_PADUS_conn %>%
+                                                group_by(LakeConnec) %>%
+                                                tally())
+protected_GAPS12_conn_countz <- merge(protected_GAPS12_conn_countz, LakeConn_countz, by='LakeConnec')
+colnames(protected_GAPS12_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
+protected_GAPS12_conn_countz$prop_protected <- protected_GAPS12_conn_countz$n_protected/protected_GAPS12_conn_countz$n_total
+
+# multi-use, lake center
+protected_GAP3only_df_PADUS_conn <- merge(protected_GAP3only_df_PADUS, LAGOSconn, by.x='COMID', 
+                                          by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAPS3only_conn_countz <- as.data.frame(protected_GAP3only_df_PADUS_conn %>%
+                                                   group_by(LakeConnec) %>%
+                                                   tally())
+protected_GAPS3only_conn_countz <- merge(protected_GAPS3only_conn_countz, LakeConn_countz, by='LakeConnec')
+colnames(protected_GAPS3only_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
+protected_GAPS3only_conn_countz$prop_protected <- protected_GAPS3only_conn_countz$n_protected/protected_GAPS3only_conn_countz$n_total
+
+# strict, 100% cat protection
+protected_GAPS12_df_PADUS_100pct_conn <- merge(protected_GAPS12_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
+                                               by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAPS12_100pct_conn_countz <- as.data.frame(protected_GAPS12_df_PADUS_100pct_conn %>%
+                                                       group_by(LakeConnec) %>%
+                                                       tally())
+protected_GAPS12_100pct_conn_countz <- merge(protected_GAPS12_100pct_conn_countz, LakeConn_countz, by='LakeConnec')
+colnames(protected_GAPS12_100pct_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
+protected_GAPS12_100pct_conn_countz$prop_protected <- protected_GAPS12_100pct_conn_countz$n_protected/protected_GAPS12_100pct_conn_countz$n_total
+
+# multi-use, 100% cat protection
+protected_GAP3only_df_PADUS_100pct_conn <- merge(protected_GAP3only_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
+                                                 by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAP3only_100pct_conn_countz <- as.data.frame(protected_GAP3only_df_PADUS_100pct_conn %>%
+                                                         group_by(LakeConnec) %>%
+                                                         tally())
+protected_GAP3only_100pct_conn_countz <- merge(protected_GAP3only_100pct_conn_countz, LakeConn_countz, by='LakeConnec')
+colnames(protected_GAP3only_100pct_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
+protected_GAP3only_100pct_conn_countz$prop_protected <- protected_GAP3only_100pct_conn_countz$n_protected/protected_GAP3only_100pct_conn_countz$n_total
+
+# unprotected
+unprotected_df_conn <- merge(unprotected_df, LAGOSconn, by.x='COMID', 
+                             by.y='nhdplusv2_comid', all.x=F)
+
+unprotected_df_conn_countz <- as.data.frame(unprotected_df_conn %>%
+                                              group_by(LakeConnec) %>%
+                                              tally())
+unprotected_df_conn_countz <- merge(unprotected_df_conn_countz, LakeConn_countz, by='LakeConnec')
+colnames(unprotected_df_conn_countz) <- c('LakeConnec','n_unprotected', 'n_total')
+unprotected_df_conn_countz$prop_unprotected <- unprotected_df_conn_countz$n_unprotected/unprotected_df_conn_countz$n_total
+
+
+## Barplots
+par(mfrow=c(2,3))
+barplot_labs <- c('DRLS','DRS','HW','ISOL')
+barplot_ylim <- c(0,0.9)
+barplot(protected_GAPS12_conn_countz$prop_protected, names.arg=barplot_labs, main='Strict, center', ylim=barplot_ylim)
+barplot(protected_GAPS12_100pct_conn_countz$prop_protected, names.arg=barplot_labs, main='Strict, cat', ylim=barplot_ylim)
+barplot(protected_GAPS3only_conn_countz$prop_protected, names.arg=barplot_labs, main='Multi-use, center', ylim=barplot_ylim)
+barplot(protected_GAP3only_100pct_conn_countz$prop_protected, names.arg=barplot_labs, main='Multi-use, cat', ylim=barplot_ylim)
+barplot(unprotected_df_conn_countz$prop_unprotected, names.arg=barplot_labs, main='Unprotected', ylim=barplot_ylim)
+
+## How about a stacked bar??
+
+
