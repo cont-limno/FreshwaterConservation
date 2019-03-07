@@ -1,6 +1,6 @@
 ####################### Characteristics of lakes in US protected areas #########################
 # Date: 2-12-19
-# updated: 2-14-19
+# updated: 3-7-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -18,13 +18,13 @@ setwd("C:/Users/FWL/Documents/FreshwaterConservation")
 # lower 48 states
 lower48 <- shapefile("C:/Ian_GIS/cb_2016_us_state_500k/lower48.shp") #same crs as NHD_pts
 
-#### Protected and unprotected lakes (centroids) ####
-protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS12.shp")
-protected_GAPS123 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS123.shp")
-protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAP3only.shp")
+## Protected lakes (centroids)
+protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/Arcgis/NHD_pts_GAPS12_ArcGIS_select.shp")
+protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/Arcgis/NHD_pts_GAP3_only_ArcGIS_select.shp")
 
-unprotected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_unprotect_pts_GAPS12.shp")
-unprotected_GAPS123 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_unprotect_pts_GAPS123.shp")
+## Other lakes
+# NHD waterbodies (converted to points in ArcGIS) (NHDPlusV2 National dataset; downloaded November 2018)
+NHD_pts <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_waterbody_pts_LakePondReservoir.shp")
 
 #### LakeCat data for analyzing lake characteristics (protected and unprotected) ####
 # Protected land by GAP status by local catchments and network watersheds (LakeCat)
@@ -53,23 +53,7 @@ Baseflow <- read.csv("C:/Ian_GIS/LakeCat/BFI.csv")
 lake_sqkm_cutoff <- 0.01 #=1ha
 
 ############################## Main program ######################################
-# remove lakes smaller than minimum threshold
-protected_GAPS12 <- subset(protected_GAPS12, AREASQKM >= lake_sqkm_cutoff)
-protected_GAPS123 <- subset(protected_GAPS123, AREASQKM >= lake_sqkm_cutoff)
-protected_GAP3only <- subset(protected_GAP3only, AREASQKM >= lake_sqkm_cutoff)
-
-unprotected_GAPS12 <- subset(unprotected_GAPS12, AREASQKM >= lake_sqkm_cutoff)
-unprotected_GAPS123 <- subset(unprotected_GAPS123, AREASQKM >= lake_sqkm_cutoff)
-
-# get COMIDs for lakes
-protected_GAPS12_COMID <- protected_GAPS12@data$COMID
-protected_GAPS123_COMID <- protected_GAPS123@data$COMID
-protected_GAP3only_COMID <- protected_GAP3only$COMID
-
-unprotected_GAPS12_COMID <- unprotected_GAPS12@data$COMID
-unprotected_GAPS123_COMID <- unprotected_GAPS123@data$COMID
-
-# calculate total % GAP status 1-2 and 1-3 for catchments and watersheds
+## calculate total % GAP status 1-2 and 1-3 for catchments and watersheds
 PADUS_LakeCat$PctGAP_Status12Cat <- PADUS_LakeCat$PctGAP_Status1Cat + PADUS_LakeCat$PctGAP_Status2Cat
 PADUS_LakeCat$PctGAP_Status123Cat <- PADUS_LakeCat$PctGAP_Status1Cat + PADUS_LakeCat$PctGAP_Status2Cat + PADUS_LakeCat$PctGAP_Status3Cat
 
@@ -77,119 +61,112 @@ PADUS_LakeCat$PctGAP_Status12Ws <- PADUS_LakeCat$PctGAP_Status1Ws + PADUS_LakeCa
 PADUS_LakeCat$PctGAP_Status123Ws <- PADUS_LakeCat$PctGAP_Status1Ws + PADUS_LakeCat$PctGAP_Status2Ws + PADUS_LakeCat$PctGAP_Status3Ws
 
 # get rid of unwanted columns
-PADUS_LakeCat <- PADUS_LakeCat[,c('COMID','PctGAP_Status12Cat','PctGAP_Status12Ws','PctGAP_Status123Cat','PctGAP_Status123Ws')]
+PADUS_LakeCat <- PADUS_LakeCat[,c('COMID','PctGAP_Status12Cat','PctGAP_Status12Ws','PctGAP_Status123Cat','PctGAP_Status123Ws','PctGAP_Status3Cat','PctGAP_Status3Ws')]
 
-# join LakeCat tables to protected lakes
-PADUS_protected_GAPS12 <- subset(PADUS_LakeCat, COMID %in% protected_GAPS12_COMID)
-PADUS_protected_GAPS123 <- subset(PADUS_LakeCat, COMID %in% protected_GAPS123_COMID)
-PADUS_unprotected_GAPS12 <- subset(PADUS_LakeCat, COMID %in% unprotected_GAPS12_COMID)
-PADUS_unprotected_GAPS123 <- subset(PADUS_LakeCat, COMID %in% unprotected_GAPS123_COMID)
+## Basic subsetting and joining PADUS data to lakes
+# Strictly protected lakes
+protected_GAPS12_df <- subset(protected_GAPS12@data, AREASQKM >= lake_sqkm_cutoff) #remove too small lakes
+protected_GAPS12_df <- protected_GAPS12_df[!duplicated(protected_GAPS12_df$COMID),] #remove duplicate COMIDs
+protected_GAPS12_df_PADUS <- merge(protected_GAPS12_df, PADUS_LakeCat, by='COMID', all.y=F) #join to PADUS table
 
-## What proportion of lakes is protected (simply falls within a protected area)?
-nrow(PADUS_protected_GAPS12)/(nrow(PADUS_protected_GAPS12) + nrow(PADUS_unprotected_GAPS12))
-nrow(PADUS_protected_GAPS123)/(nrow(PADUS_protected_GAPS123) + nrow(PADUS_unprotected_GAPS123))
+# Multi-use protected lakes
+protected_GAP3only_df <- subset(protected_GAP3only@data, AREASQKM >= lake_sqkm_cutoff) #remove too small lakes
+protected_GAP3only_df <- protected_GAP3only_df[!duplicated(protected_GAP3only_df$COMID),] #remove duplicate COMIDs
+protected_GAP3only_df_PADUS <- merge(protected_GAP3only_df, PADUS_LakeCat, by='COMID', all.y=F) #join to PADUS table
 
-# Export shapefiles of % protected for mapping in ArcGIS
-# PADUS_protected_GAPS12_export <- merge(protected_GAPS12, PADUS_protected_GAPS12, by='COMID', all.x=F)
+# get rid of lakes counted as both strict and multi (treat as strict); issues with overlapping polygons in PADUS
+double_lakes <- intersect(protected_GAPS12_df_PADUS$COMID, protected_GAP3only_df_PADUS$COMID)
+protected_GAP3only_df_PADUS <- subset(protected_GAP3only_df_PADUS, !(COMID %in% double_lakes)) #take out lakes that occur in both
+
+# Unprotected lakes: all other lakes in LakeCat
+unprotected_df <- merge(PADUS_LakeCat, NHD_pts, by='COMID', all=F) #merge to NHD to get lake area column
+unprotected_df <- subset(unprotected_df, AREASQKM >= lake_sqkm_cutoff) #remove too small lakes
+unprotected_df <- unprotected_df[!duplicated(unprotected_df$COMID),] #remove duplicate COMIDs
+
+unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAPS12_df_PADUS$COMID))#remove strictly protected lakes
+unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAP3only_df_PADUS$COMID))#remove multi-use lakes
+
+## What proportion of lakes is protected/unprotected (simply falls within a protected area)?
+total_n_lakes <- nrow(unprotected_df) + nrow(protected_GAP3only_df_PADUS) + nrow(protected_GAPS12_df_PADUS)
+nrow(protected_GAPS12_df_PADUS)/total_n_lakes
+nrow(protected_GAP3only_df_PADUS)/total_n_lakes
+nrow(unprotected_df)/total_n_lakes
+
+# # Export shapefiles of % protected for mapping in ArcGIS (first merge back to NHD pts)
+# PADUS_protected_GAPS12_export <- merge(NHD_pts, protected_GAPS12_df_PADUS, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
 # layername <- "NHD_protect_pts_GAPS12_pct"
 # writeOGR(PADUS_protected_GAPS12_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-# 
-# PADUS_protected_GAPS123_export <- merge(protected_GAPS123, PADUS_protected_GAPS123, by='COMID', all.x=F)
+# # #
+# PADUS_protected_GAP3only_export <- merge(NHD_pts, protected_GAP3only_df_PADUS, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
-# layername <- "NHD_protect_pts_GAPS123_pct"
-# writeOGR(PADUS_protected_GAPS123_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-# 
-# PADUS_unprotected_GAPS12_export <- merge(unprotected_GAPS12, PADUS_unprotected_GAPS12, by='COMID', all.x=F)
+# layername <- "NHD_protect_pts_GAP3only_pct"
+# writeOGR(PADUS_protected_GAP3only_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+# # #
+# PADUS_unprotected_export <- merge(NHD_pts, unprotected_df, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
-# layername <- "NHD_unprotect_pts_GAPS12_pct"
-# writeOGR(PADUS_unprotected_GAPS12_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-# 
-# PADUS_unprotected_GAPS123_export <- merge(unprotected_GAPS123, PADUS_unprotected_GAPS123, by='COMID', all.x=F)
-# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
-# layername <- "NHD_unprotect_pts_GAPS123_pct"
-# writeOGR(PADUS_unprotected_GAPS123_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-
+# layername <- "NHD_unprotected_pts"
+# writeOGR(PADUS_unprotected_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
 
 ### Basic plots: do lakes in protected areas have protected catchments and watersheds?
-par(mfrow=c(2,2))
-hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
-hist(PADUS_protected_GAPS12$PctGAP_Status12Cat, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
-     col=hist_colors, ylim=c(0,40000))
-mtext(side=3, 'Strict, Cat', cex=0.75)
-hist(PADUS_protected_GAPS12$PctGAP_Status12Ws, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
-     col=hist_colors, ylim=c(0,40000))
-mtext(side=3, 'Strict, Ws', cex=0.75)
-hist(PADUS_protected_GAPS123$PctGAP_Status123Cat, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
-     col=hist_colors, ylim=c(0,40000))
-mtext(side=3, 'Multi-use, Cat', cex=0.75)
-hist(PADUS_protected_GAPS123$PctGAP_Status123Ws, xlab='% protected', main='Protected lakes',breaks=seq(0,100,20),
-     col=hist_colors, ylim=c(0,40000))
-mtext(side=3, 'Multi-use, Ws', cex=0.75)
+png("Figures/protected_lakes_histogram.png", width = 7,height = 5,units = 'in',res=300)
+  par(mfrow=c(2,2))
+  # PLOT A
+  par(mar=c(2,3,4,0.5)) #bot,left,top,right
+  hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Cat, xlab='', main='A) Strict, catchment',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000))
+  title(ylab='Frequency', line=2.2)
+  mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  # PLOT B
+  par(mar=c(2,2,4,1.5)) #bot,left,top,right
+  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Ws, xlab='', main='B) Strict, watershed',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  # PLOT C
+  par(mar=c(3,3,3,0.5)) #bot,left,top,right
+  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Cat, xlab='% protected', main='C) Multi-use, catchment',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000))
+  title(xlab='% protected', line=2)
+  title(ylab='Frequency', line=2.2)
+  mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
+  # PLOT D
+  par(mar=c(3,2,3,1.5)) #bot,left,top,right
+  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Ws, xlab='% protected', main='D) Multi-use, watershed',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(xlab='% protected', line=2)
+  mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
+dev.off()
 
-hist(PADUS_unprotected_GAPS12$PctGAP_Status12Cat, xlab='GAPS12, Cat', main='Unprotected lakes',breaks=seq(0,100,20))
-hist(PADUS_unprotected_GAPS12$PctGAP_Status12Ws, xlab='GAPS12, Ws', main='Unprotected lakes',breaks=seq(0,100,20))
-hist(PADUS_unprotected_GAPS123$PctGAP_Status123Cat, xlab='GAPS123, Cat', main='Unprotected lakes',breaks=seq(0,100,20))
-hist(PADUS_unprotected_GAPS123$PctGAP_Status123Ws, xlab='GAPS123, Ws', main='Unprotected lakes',breaks=seq(0,100,20))
+# Create subset of lakes with fully protected catchments
+protected_GAPS12_df_PADUS_100pct <- subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat >= 100)
+protected_GAP3only_df_PADUS_100pct <- subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat >= 100)
 
-# What proportion of lakes that occur in protected areas have greater than X amount of cat/watershed proteced?
-nrow(subset(PADUS_protected_GAPS12, PctGAP_Status12Cat > 80))/nrow(PADUS_protected_GAPS12)
-nrow(subset(PADUS_protected_GAPS12, PctGAP_Status12Ws > 80))/nrow(PADUS_protected_GAPS12)
-nrow(subset(PADUS_protected_GAPS123, PctGAP_Status123Cat > 80))/nrow(PADUS_protected_GAPS123)
-nrow(subset(PADUS_protected_GAPS123, PctGAP_Status123Ws > 80))/nrow(PADUS_protected_GAPS123)
+# What proportion of lakes have fully protected catchments/watersheds?
+nrow(protected_GAPS12_df_PADUS_100pct)/total_n_lakes
+nrow(protected_GAP3only_df_PADUS_100pct)/total_n_lakes
 
-# # combine protected and unprotected lakes into single data frame
-# PADUS_protected_GAPS12$Protected <- 'Protected'
-# PADUS_unprotected_GAPS12$Protected <- 'Unprotected'
-# PADUS_protected_GAPS123$Protected <- 'Protected'
-# PADUS_unprotected_GAPS123$Protected <- 'Unprotected'
-# 
-# PADUS_GAPS12_ProUn_Cat <- rbind.data.frame(PADUS_protected_GAPS12, PADUS_unprotected_GAPS12)
-# PADUS_GAPS12_ProUn_Cat <- melt(PADUS_GAPS12_ProUn_Cat, id.vars='Protected', measure.vars='PctGAP_Status12Cat')
-# boxplot(value ~ Protected, PADUS_GAPS12_ProUn_Cat, main='GAPS12, Cat')
-# 
-# PADUS_GAPS12_ProUn_Ws <- rbind.data.frame(PADUS_protected_GAPS12, PADUS_unprotected_GAPS12)
-# PADUS_GAPS12_ProUn_Ws <- melt(PADUS_GAPS12_ProUn_Ws, id.vars='Protected', measure.vars='PctGAP_Status12Ws')
-# boxplot(value ~ Protected, PADUS_GAPS12_ProUn_Ws, main='GAPS12, Ws')
-# 
-# PADUS_GAPS123_ProUn_Cat <- rbind.data.frame(PADUS_protected_GAPS123, PADUS_unprotected_GAPS123)
-# PADUS_GAPS123_ProUn_Cat <- melt(PADUS_GAPS123_ProUn_Cat, id.vars='Protected', measure.vars='PctGAP_Status123Cat')
-# boxplot(value ~ Protected, PADUS_GAPS123_ProUn_Cat, main='GAPS123, Cat')
-# 
-# PADUS_GAPS123_ProUn_Ws <- rbind.data.frame(PADUS_protected_GAPS123, PADUS_unprotected_GAPS123)
-# PADUS_GAPS123_ProUn_Ws <- melt(PADUS_GAPS123_ProUn_Ws, id.vars='Protected', measure.vars='PctGAP_Status123Ws')
-# boxplot(value ~ Protected, PADUS_GAPS123_ProUn_Ws, main='GAPS123, Ws')
+##  Violin plot of protection across all US lakes
+all_lake_COMID <- c(unprotected_df$COMID, protected_GAPS12_df_PADUS$COMID, protected_GAP3only_df_PADUS$COMID) 
+violin_df <- subset(PADUS_LakeCat, COMID %in% all_lake_COMID)
+violin_df[is.na(violin_df)] <- 0 #convert NAs to 0; treat NA protection as 0 protection
 
-# or try with violin plots
-# PERCENT PROTECTION
-par(mfrow=c(2,2))
-vioplot(na.omit(PADUS_protected_GAPS12$PctGAP_Status12Cat),na.omit(PADUS_unprotected_GAPS12$PctGAP_Status12Cat), 
-        names=c('Protected','Unprotected'), col='gray50')
-title('GAPS12, Cat')
-mtext(side=3, 'Strict', cex=0.75)
+v1 <- violin_df$PctGAP_Status12Cat
+v2 <- violin_df$PctGAP_Status3Cat
+v3 <- violin_df$PctGAP_Status12Ws
+v4 <- violin_df$PctGAP_Status3Ws
 
-vioplot(na.omit(PADUS_protected_GAPS12$PctGAP_Status12Ws),na.omit(PADUS_unprotected_GAPS12$PctGAP_Status12Ws), 
-        names=c('Protected','Unprotected'), col='gray50')
-title('GAPS12, Ws')
-mtext(side=3, 'Strict', cex=0.75)
-
-vioplot(na.omit(PADUS_protected_GAPS123$PctGAP_Status123Cat),na.omit(PADUS_unprotected_GAPS123$PctGAP_Status123Cat), 
-        names=c('Protected','Unprotected'), col='gray50')
-title('GAPS123, Cat')
-mtext(side=3, 'Multi-use', cex=0.75)
-
-vioplot(na.omit(PADUS_protected_GAPS123$PctGAP_Status123Ws),na.omit(PADUS_unprotected_GAPS123$PctGAP_Status123Ws), 
-        names=c('Protected','Unprotected'), col='gray50')
-title('GAPS123, Ws')
-mtext(side=3, 'Multi-use', cex=0.75)
-
-# lakes that fall in strictly protected areas
-par(mfrow=c(1,1))
-vioplot(na.omit(PADUS_protected_GAPS12$PctGAP_Status12Cat),na.omit(PADUS_protected_GAPS12$PctGAP_Status123Cat), 
-        names=c('Strict','Multi-use'), col='gray50')
-title('GAPS12, Cat')
-mtext(side=3, 'Strict', cex=0.75)
-
+png("Figures/violin_pct_protected.png", width = 7,height = 5,units = 'in',res=300)
+  par(mfrow=c(1,1))
+  par(las=1,bty="l")  ## my preferred setting
+  par(mar=c(3,4,2,0.5)) #bot,left,top,right
+  plot(0.5:5,0.5:5,type="n",ylim=c(0,100),
+      axes=FALSE,ann=FALSE)
+  vioplot(v1,v2,v3,v4,add=T, col='gray70')
+  axis(side=1,at=1:4,labels=c('Strict, Cat', 'Multi-use, Cat', 'Strict, Ws', 'Multi-use, Ws'))
+  axis(side=2,at=seq(0,100,10),labels=seq(0,100,10))
+  title(ylab='Percent protected', line=2.2)
+dev.off()
 
 ### now see if protected vs. unprotected lakes have different characteristics
 # calculate some total/new variables
@@ -209,645 +186,145 @@ ForestLoss$TotalPctFrstLossWs <- rowSums(ForestLoss[,20:32])
 
 ## Create new merged tables for plotting
 # LULC
-PADUS_protected_GAPS12_NLCD <- merge(PADUS_protected_GAPS12, NLCD_2011, by='COMID', all.x=F)
-PADUS_protected_GAPS123_NLCD <- merge(PADUS_protected_GAPS123, NLCD_2011, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_NLCD <- merge(PADUS_unprotected_GAPS12, NLCD_2011, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_NLCD <- merge(PADUS_unprotected_GAPS123, NLCD_2011, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_NLCD <- merge(protected_GAPS12_df_PADUS, NLCD_2011, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_NLCD <- merge(protected_GAP3only_df_PADUS, NLCD_2011, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_NLCD <- merge(protected_GAPS12_df_PADUS_100pct, NLCD_2011, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_NLCD <- merge(protected_GAP3only_df_PADUS_100pct, NLCD_2011, by='COMID', all.x=F)
+unprotected_df_NLCD <- merge(unprotected_df, NLCD_2011, by='COMID', all.x=F)
 
 # Road density
-PADUS_protected_GAPS12_roads <- merge(PADUS_protected_GAPS12, RoadDensity, by='COMID', all.x=F)
-PADUS_protected_GAPS123_roads <- merge(PADUS_protected_GAPS123, RoadDensity, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_roads <- merge(PADUS_unprotected_GAPS12, RoadDensity, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_roads <- merge(PADUS_unprotected_GAPS123, RoadDensity, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_roads <- merge(protected_GAPS12_df_PADUS, RoadDensity, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_roads <- merge(protected_GAP3only_df_PADUS, RoadDensity, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_roads <- merge(protected_GAPS12_df_PADUS_100pct, RoadDensity, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_roads <- merge(protected_GAP3only_df_PADUS_100pct, RoadDensity, by='COMID', all.x=F)
+unprotected_df_roads <- merge(unprotected_df, RoadDensity, by='COMID', all.x=F)
 
 # Impervious
-PADUS_protected_GAPS12_imp <- merge(PADUS_protected_GAPS12, Impervious, by='COMID', all.x=F)
-PADUS_protected_GAPS123_imp <- merge(PADUS_protected_GAPS123, Impervious, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_imp <- merge(PADUS_unprotected_GAPS12, Impervious, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_imp <- merge(PADUS_unprotected_GAPS123, Impervious, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_imp <- merge(protected_GAPS12_df_PADUS, Impervious, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_imp <- merge(protected_GAP3only_df_PADUS, Impervious, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_imp <- merge(protected_GAPS12_df_PADUS_100pct, Impervious, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_imp <- merge(protected_GAP3only_df_PADUS_100pct, Impervious, by='COMID', all.x=F)
+unprotected_df_imp <- merge(unprotected_df, Impervious, by='COMID', all.x=F)
 
 # Elevation
-PADUS_protected_GAPS12_elev <- merge(PADUS_protected_GAPS12, elevation, by='COMID', all.x=F)
-PADUS_protected_GAPS123_elev <- merge(PADUS_protected_GAPS123, elevation, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_elev <- merge(PADUS_unprotected_GAPS12, elevation, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_elev <- merge(PADUS_unprotected_GAPS123, elevation, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_elev <- merge(protected_GAPS12_df_PADUS, elevation, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_elev <- merge(protected_GAP3only_df_PADUS, elevation, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_elev <- merge(protected_GAPS12_df_PADUS_100pct, elevation, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_elev <- merge(protected_GAP3only_df_PADUS_100pct, elevation, by='COMID', all.x=F)
+unprotected_df_elev <- merge(unprotected_df, elevation, by='COMID', all.x=F)
 
 # Wetness index
-PADUS_protected_GAPS12_WetIndex <- merge(PADUS_protected_GAPS12, WetIndex, by='COMID', all.x=F)
-PADUS_protected_GAPS123_WetIndex <- merge(PADUS_protected_GAPS123, WetIndex, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_WetIndex <- merge(PADUS_unprotected_GAPS12, WetIndex, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_WetIndex <- merge(PADUS_unprotected_GAPS123, WetIndex, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_WetIndex <- merge(protected_GAPS12_df_PADUS, WetIndex, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_WetIndex <- merge(protected_GAP3only_df_PADUS, WetIndex, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_WetIndex <- merge(protected_GAPS12_df_PADUS_100pct, WetIndex, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_WetIndex <- merge(protected_GAP3only_df_PADUS_100pct, WetIndex, by='COMID', all.x=F)
+unprotected_df_WetIndex <- merge(unprotected_df, WetIndex, by='COMID', all.x=F)
 
 # Fire
-PADUS_protected_GAPS12_fahr <- merge(PADUS_protected_GAPS12, Fahr, by='COMID', all.x=F)
-PADUS_protected_GAPS123_fahr <- merge(PADUS_protected_GAPS123, Fahr, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_fahr <- merge(PADUS_unprotected_GAPS12, Fahr, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_fahr <- merge(PADUS_unprotected_GAPS123, Fahr, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_Fahr <- merge(protected_GAPS12_df_PADUS, Fahr, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_Fahr <- merge(protected_GAP3only_df_PADUS, Fahr, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_Fahr <- merge(protected_GAPS12_df_PADUS_100pct, Fahr, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_Fahr <- merge(protected_GAP3only_df_PADUS_100pct, Fahr, by='COMID', all.x=F)
+unprotected_df_Fahr <- merge(unprotected_df, Fahr, by='COMID', all.x=F)
 
 # Forest loss
-PADUS_protected_GAPS12_forestloss <- merge(PADUS_protected_GAPS12, ForestLoss, by='COMID', all.x=F)
-PADUS_protected_GAPS123_forestloss <- merge(PADUS_protected_GAPS123, ForestLoss, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_forestloss <- merge(PADUS_unprotected_GAPS12, ForestLoss, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_forestloss <- merge(PADUS_unprotected_GAPS123, ForestLoss, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_ForestLoss <- merge(protected_GAPS12_df_PADUS, ForestLoss, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_ForestLoss <- merge(protected_GAP3only_df_PADUS, ForestLoss, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_ForestLoss <- merge(protected_GAPS12_df_PADUS_100pct, ForestLoss, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_ForestLoss <- merge(protected_GAP3only_df_PADUS_100pct, ForestLoss, by='COMID', all.x=F)
+unprotected_df_ForestLoss <- merge(unprotected_df, ForestLoss, by='COMID', all.x=F)
 
 # Climate
-PADUS_protected_GAPS12_PRISM <- merge(PADUS_protected_GAPS12, PRISM, by='COMID', all.x=F)
-PADUS_protected_GAPS123_PRISM <- merge(PADUS_protected_GAPS123, PRISM, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_PRISM <- merge(PADUS_unprotected_GAPS12, PRISM, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_PRISM <- merge(PADUS_unprotected_GAPS123, PRISM, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_PRISM <- merge(protected_GAPS12_df_PADUS, PRISM, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_PRISM <- merge(protected_GAP3only_df_PADUS, PRISM, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_PRISM <- merge(protected_GAPS12_df_PADUS_100pct, PRISM, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_PRISM <- merge(protected_GAP3only_df_PADUS_100pct, PRISM, by='COMID', all.x=F)
+unprotected_df_PRISM <- merge(unprotected_df, PRISM, by='COMID', all.x=F)
 
 # Dam density
-PADUS_protected_GAPS12_dams <- merge(PADUS_protected_GAPS12, Dams, by='COMID', all.x=F)
-PADUS_protected_GAPS123_dams <- merge(PADUS_protected_GAPS123, Dams, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_dams <- merge(PADUS_unprotected_GAPS12, Dams, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_dams <- merge(PADUS_unprotected_GAPS123, Dams, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_Dams <- merge(protected_GAPS12_df_PADUS, Dams, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_Dams <- merge(protected_GAP3only_df_PADUS, Dams, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_Dams <- merge(protected_GAPS12_df_PADUS_100pct, Dams, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_Dams <- merge(protected_GAP3only_df_PADUS_100pct, Dams, by='COMID', all.x=F)
+unprotected_df_Dams <- merge(unprotected_df, Dams, by='COMID', all.x=F)
 
 # Mines
-PADUS_protected_GAPS12_mines <- merge(PADUS_protected_GAPS12, Mines, by='COMID', all.x=F)
-PADUS_protected_GAPS123_mines <- merge(PADUS_protected_GAPS123, Mines, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_mines <- merge(PADUS_unprotected_GAPS12, Mines, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_mines <- merge(PADUS_unprotected_GAPS123, Mines, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_Mines <- merge(protected_GAPS12_df_PADUS, Mines, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_Mines <- merge(protected_GAP3only_df_PADUS, Mines, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_Mines <- merge(protected_GAPS12_df_PADUS_100pct, Mines, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_Mines <- merge(protected_GAP3only_df_PADUS_100pct, Mines, by='COMID', all.x=F)
+unprotected_df_Mines <- merge(unprotected_df, Mines, by='COMID', all.x=F)
 
 # Deposition
-PADUS_protected_GAPS12_depos <- merge(PADUS_protected_GAPS12, Deposition, by='COMID', all.x=F)
-PADUS_protected_GAPS123_depos <- merge(PADUS_protected_GAPS123, Deposition, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_depos <- merge(PADUS_unprotected_GAPS12, Deposition, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_depos <- merge(PADUS_unprotected_GAPS123, Deposition, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_Deposition <- merge(protected_GAPS12_df_PADUS, Deposition, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_Deposition <- merge(protected_GAP3only_df_PADUS, Deposition, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_Deposition <- merge(protected_GAPS12_df_PADUS_100pct, Deposition, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_Deposition <- merge(protected_GAP3only_df_PADUS_100pct, Deposition, by='COMID', all.x=F)
+unprotected_df_Deposition <- merge(unprotected_df, Deposition, by='COMID', all.x=F)
 
 # Runoff
-PADUS_protected_GAPS12_runoff <- merge(PADUS_protected_GAPS12, Runoff, by='COMID', all.x=F)
-PADUS_protected_GAPS123_runoff <- merge(PADUS_protected_GAPS123, Runoff, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_runoff <- merge(PADUS_unprotected_GAPS12, Runoff, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_runoff <- merge(PADUS_unprotected_GAPS123, Runoff, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_Runoff <- merge(protected_GAPS12_df_PADUS, Runoff, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_Runoff <- merge(protected_GAP3only_df_PADUS, Runoff, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_Runoff <- merge(protected_GAPS12_df_PADUS_100pct, Runoff, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_Runoff <- merge(protected_GAP3only_df_PADUS_100pct, Runoff, by='COMID', all.x=F)
+unprotected_df_Runoff <- merge(unprotected_df, Runoff, by='COMID', all.x=F)
 
 # Baseflow
-PADUS_protected_GAPS12_baseflow <- merge(PADUS_protected_GAPS12, Baseflow, by='COMID', all.x=F)
-PADUS_protected_GAPS123_baseflow <- merge(PADUS_protected_GAPS123, Baseflow, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_baseflow <- merge(PADUS_unprotected_GAPS12, Baseflow, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_baseflow <- merge(PADUS_unprotected_GAPS123, Baseflow, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_Baseflow <- merge(protected_GAPS12_df_PADUS, Baseflow, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_Baseflow <- merge(protected_GAP3only_df_PADUS, Baseflow, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_Baseflow <- merge(protected_GAPS12_df_PADUS_100pct, Baseflow, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_Baseflow <- merge(protected_GAP3only_df_PADUS_100pct, Baseflow, by='COMID', all.x=F)
+unprotected_df_Baseflow <- merge(unprotected_df, Baseflow, by='COMID', all.x=F)
 
 # Toxic
-PADUS_protected_GAPS12_Toxic <- merge(PADUS_protected_GAPS12, Toxic, by='COMID', all.x=F)
-PADUS_protected_GAPS123_Toxic <- merge(PADUS_protected_GAPS123, Toxic, by='COMID', all.x=F)
-PADUS_unprotected_GAPS12_Toxic <- merge(PADUS_unprotected_GAPS12, Toxic, by='COMID', all.x=F)
-PADUS_unprotected_GAPS123_Toxic <- merge(PADUS_unprotected_GAPS123, Toxic, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_Toxic <- merge(protected_GAPS12_df_PADUS, Toxic, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_Toxic <- merge(protected_GAP3only_df_PADUS, Toxic, by='COMID', all.x=F)
+protected_GAPS12_df_PADUS_100pct_Toxic <- merge(protected_GAPS12_df_PADUS_100pct, Toxic, by='COMID', all.x=F)
+protected_GAP3only_df_PADUS_100pct_Toxic <- merge(protected_GAP3only_df_PADUS_100pct, Toxic, by='COMID', all.x=F)
+unprotected_df_Toxic <- merge(unprotected_df, Toxic, by='COMID', all.x=F)
 
-# # Basic violin plots
-# # LULC
-# # AGRICULTURE
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_NLCD$PctTotalAg2011Cat),na.omit(PADUS_unprotected_GAPS12_NLCD$PctTotalAg2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Ag, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_NLCD$PctTotalAg2011Ws),na.omit(PADUS_unprotected_GAPS12_NLCD$PctTotalAg2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Ag, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_NLCD$PctTotalAg2011Cat),na.omit(PADUS_unprotected_GAPS123_NLCD$PctTotalAg2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Ag, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_NLCD$PctTotalAg2011Ws),na.omit(PADUS_unprotected_GAPS123_NLCD$PctTotalAg2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Ag, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # FOREST
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_NLCD$PctTotalForest2011Cat),na.omit(PADUS_unprotected_GAPS12_NLCD$PctTotalForest2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Forest, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_NLCD$PctTotalForest2011Ws),na.omit(PADUS_unprotected_GAPS12_NLCD$PctTotalForest2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Forest, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_NLCD$PctTotalForest2011Cat),na.omit(PADUS_unprotected_GAPS123_NLCD$PctTotalForest2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Forest, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_NLCD$PctTotalForest2011Ws),na.omit(PADUS_unprotected_GAPS123_NLCD$PctTotalForest2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Forest, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # WETLAND
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_NLCD$PctTotalWetland2011Cat),na.omit(PADUS_unprotected_GAPS12_NLCD$PctTotalWetland2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Wetland, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_NLCD$PctTotalWetland2011Ws),na.omit(PADUS_unprotected_GAPS12_NLCD$PctTotalWetland2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Wetland, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_NLCD$PctTotalWetland2011Cat),na.omit(PADUS_unprotected_GAPS123_NLCD$PctTotalWetland2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Wetland, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_NLCD$PctTotalWetland2011Ws),na.omit(PADUS_unprotected_GAPS123_NLCD$PctTotalWetland2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('% Wetland, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # ROAD DENSITY
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_roads$RdDensCat),na.omit(PADUS_unprotected_GAPS12_roads$RdDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Road density, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_roads$RdDensWs),na.omit(PADUS_unprotected_GAPS12_roads$RdDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Road density, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_roads$RdDensCat),na.omit(PADUS_unprotected_GAPS123_roads$RdDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Road density, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_roads$RdDensWs),na.omit(PADUS_unprotected_GAPS123_roads$RdDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Road density, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # IMPERVIOUS
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_imp$PctImp2011Cat),na.omit(PADUS_unprotected_GAPS12_imp$PctImp2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Impervious, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_imp$PctImp2011Ws),na.omit(PADUS_unprotected_GAPS12_imp$PctImp2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Impervious, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_imp$PctImp2011Cat),na.omit(PADUS_unprotected_GAPS123_imp$PctImp2011Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Impervious, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_imp$PctImp2011Ws),na.omit(PADUS_unprotected_GAPS123_imp$PctImp2011Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Impervious, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # ELEVATION
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_elev$ElevCat),na.omit(PADUS_unprotected_GAPS12_elev$ElevCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Elevation, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_elev$ElevWs),na.omit(PADUS_unprotected_GAPS12_elev$ElevWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Elevation, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_elev$ElevCat),na.omit(PADUS_unprotected_GAPS123_elev$ElevCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Elevation, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_elev$ElevWs),na.omit(PADUS_unprotected_GAPS123_elev$ElevWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Elevation, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # WetIndex    
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_WetIndex$WetIndexCat),na.omit(PADUS_unprotected_GAPS12_WetIndex$WetIndexCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('WetIndex, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_WetIndex$WetIndexWs),na.omit(PADUS_unprotected_GAPS12_WetIndex$WetIndexWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('WetIndex, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_WetIndex$WetIndexCat),na.omit(PADUS_unprotected_GAPS123_WetIndex$WetIndexCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('WetIndex, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_WetIndex$WetIndexWs),na.omit(PADUS_unprotected_GAPS123_WetIndex$WetIndexWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('WetIndex, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # FIRE
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_fahr$TotalPctFireCat),na.omit(PADUS_unprotected_GAPS12_fahr$TotalPctFireCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Fire, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_fahr$TotalPctFireWs),na.omit(PADUS_unprotected_GAPS12_fahr$TotalPctFireWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Fire, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_fahr$TotalPctFireCat),na.omit(PADUS_unprotected_GAPS123_fahr$TotalPctFireCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Fire, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_fahr$TotalPctFireWs),na.omit(PADUS_unprotected_GAPS123_fahr$TotalPctFireWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Fire, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # Forest Loss
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_forestloss$TotalPctFrstLossCat),na.omit(PADUS_unprotected_GAPS12_forestloss$TotalPctFrstLossCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('ForestLoss, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_forestloss$TotalPctFrstLossWs),na.omit(PADUS_unprotected_GAPS12_forestloss$TotalPctFrstLossWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('ForestLoss, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_forestloss$TotalPctFrstLossCat),na.omit(PADUS_unprotected_GAPS123_forestloss$TotalPctFrstLossCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('ForestLoss, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_forestloss$TotalPctFrstLossWs),na.omit(PADUS_unprotected_GAPS123_forestloss$TotalPctFrstLossWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('ForestLoss, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # PRECIPITATION
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_PRISM$Precip8110Cat),na.omit(PADUS_unprotected_GAPS12_PRISM$Precip8110Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Precip, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_PRISM$Precip8110Ws),na.omit(PADUS_unprotected_GAPS12_PRISM$Precip8110Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Precip, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_PRISM$Precip8110Cat),na.omit(PADUS_unprotected_GAPS123_PRISM$Precip8110Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Precip, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_PRISM$Precip8110Ws),na.omit(PADUS_unprotected_GAPS123_PRISM$Precip8110Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Precip, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # TEMPERATURE
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_PRISM$Tmean8110Cat),na.omit(PADUS_unprotected_GAPS12_PRISM$Tmean8110Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Temp, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_PRISM$Tmean8110Ws),na.omit(PADUS_unprotected_GAPS12_PRISM$Tmean8110Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Temp, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_PRISM$Tmean8110Cat),na.omit(PADUS_unprotected_GAPS123_PRISM$Tmean8110Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Temp, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_PRISM$Tmean8110Ws),na.omit(PADUS_unprotected_GAPS123_PRISM$Tmean8110Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Temp, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # DAMS
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_dams$NABD_DensCat),na.omit(PADUS_unprotected_GAPS12_dams$NABD_DensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Dams, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_dams$NABD_DensWs),na.omit(PADUS_unprotected_GAPS12_dams$NABD_DensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Dams, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_dams$NABD_DensCat),na.omit(PADUS_unprotected_GAPS123_dams$NABD_DensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Dams, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_dams$NABD_DensWs),na.omit(PADUS_unprotected_GAPS123_dams$NABD_DensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Dams, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # MINES
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_mines$MineDensCat),na.omit(PADUS_unprotected_GAPS12_mines$MineDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Mines, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_mines$MineDensWs),na.omit(PADUS_unprotected_GAPS12_mines$MineDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Mines, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_mines$MineDensCat),na.omit(PADUS_unprotected_GAPS123_mines$MineDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Mines, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_mines$MineDensWs),na.omit(PADUS_unprotected_GAPS123_mines$MineDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Mines, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # SN Deposition
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_depos$SN_2008Cat),na.omit(PADUS_unprotected_GAPS12_depos$SN_2008Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Deposition, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_depos$SN_2008Ws),na.omit(PADUS_unprotected_GAPS12_depos$SN_2008Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Deposition, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_depos$SN_2008Cat),na.omit(PADUS_unprotected_GAPS123_depos$SN_2008Cat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Deposition, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_depos$SN_2008Ws),na.omit(PADUS_unprotected_GAPS123_depos$SN_2008Ws), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Deposition, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # Runoff    
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_runoff$RunoffCat),na.omit(PADUS_unprotected_GAPS12_runoff$RunoffCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Runoff, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_runoff$RunoffWs),na.omit(PADUS_unprotected_GAPS12_runoff$RunoffWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Runoff, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_runoff$RunoffCat),na.omit(PADUS_unprotected_GAPS123_runoff$RunoffCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Runoff, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_runoff$RunoffWs),na.omit(PADUS_unprotected_GAPS123_runoff$RunoffWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Runoff, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # Baseflow    
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_baseflow$BFICat),na.omit(PADUS_unprotected_GAPS12_baseflow$BFICat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Baseflow, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_baseflow$BFIWs),na.omit(PADUS_unprotected_GAPS12_baseflow$BFIWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Baseflow, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_baseflow$BFICat),na.omit(PADUS_unprotected_GAPS123_baseflow$BFICat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Baseflow, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_baseflow$BFIWs),na.omit(PADUS_unprotected_GAPS123_baseflow$BFIWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Baseflow, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # Toxic    
-# # Superfund sites
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$SuperfundDensCat),na.omit(PADUS_unprotected_GAPS12_Toxic$SuperfundDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Superfund, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$SuperfundDensWs),na.omit(PADUS_unprotected_GAPS12_Toxic$SuperfundDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Superfund, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$SuperfundDensCat),na.omit(PADUS_unprotected_GAPS123_Toxic$SuperfundDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Superfund, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$SuperfundDensWs),na.omit(PADUS_unprotected_GAPS123_Toxic$SuperfundDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Superfund, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # TRI sites
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$TRIDensCat),na.omit(PADUS_unprotected_GAPS12_Toxic$TRIDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('TRI sites, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$TRIDensWs),na.omit(PADUS_unprotected_GAPS12_Toxic$TRIDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('TRI sites, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$TRIDensCat),na.omit(PADUS_unprotected_GAPS123_Toxic$TRIDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('TRI sites, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$TRIDensWs),na.omit(PADUS_unprotected_GAPS123_Toxic$TRIDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('TRI sites, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # NPDES sites
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$NPDESDensCat),na.omit(PADUS_unprotected_GAPS12_Toxic$NPDESDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('NPDES sites, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$NPDESDensWs),na.omit(PADUS_unprotected_GAPS12_Toxic$NPDESDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('NPDES sites, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$NPDESDensCat),na.omit(PADUS_unprotected_GAPS123_Toxic$NPDESDensCat), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('NPDES sites, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$NPDESDensWs),na.omit(PADUS_unprotected_GAPS123_Toxic$NPDESDensWs), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('NPDES sites, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # Catchment, watershed area
-# par(mfrow=c(2,2))
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$CatAreaSqKm),na.omit(PADUS_unprotected_GAPS12_Toxic$CatAreaSqKm), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Area, Cat')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS12_Toxic$WsAreaSqKm),na.omit(PADUS_unprotected_GAPS12_Toxic$WsAreaSqKm), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Area, Ws')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$CatAreaSqKm),na.omit(PADUS_unprotected_GAPS123_Toxic$CatAreaSqKm), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Area, Cat')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# vioplot(na.omit(PADUS_protected_GAPS123_Toxic$WsAreaSqKm),na.omit(PADUS_unprotected_GAPS123_Toxic$WsAreaSqKm), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Area, Ws')
-# mtext(side=3, 'Multi-use', cex=0.75)
-# 
-# # LAKE AREA
-# par(mfrow=c(2,2))
-# vioplot(na.omit(protected_GAPS12@data$AREASQKM),na.omit(unprotected_GAPS12@data$AREASQKM), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Lake Area')
-# mtext(side=3, 'Strict', cex=0.75)
-# 
-# vioplot(na.omit(protected_GAPS123@data$AREASQKM),na.omit(unprotected_GAPS123@data$AREASQKM), 
-#         names=c('Protected','Unprotected'), col='gray50')
-# title('Lake Area')
-# mtext(side=3, 'Multi-use', cex=0.75)
-
-######## Experimenting with multi-panel/fancier violin/box plotz ####
-library(ggpubr)
-plot_colorz <- c('forestgreen','tan','gray40')
-
-# LAKE AREA
-temp_a <- protected_GAPS12@data
-temp_a$Protection <- 'Strict'
-temp_b <- protected_GAPS123@data
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- unprotected_GAPS123@data
-temp_c$Protection <- 'Unprotected'
-
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-lake_area_df <- temp_df[,c('AREASQKM','Protection')]
-lake_area_df  <- melt(lake_area_df, id.vars='Protection')
-lake_area_df$Protection <- as.factor(lake_area_df$Protection)
-lake_area_df$Protection <- factor(lake_area_df$Protection,levels(lake_area_df$Protection)[c(2,1,3)])
-
-lake_area_violin <- ggplot(lake_area_df, aes(x=Protection, y=value, fill=Protection)) + 
-  geom_violin() + 
-  stat_summary(fun.y=median, geom="point", size=2, color="black")+
-  theme_classic()+
-  theme(legend.position='none')+
-  scale_fill_manual(values=plot_colorz)+
-  labs(title="Lake area",x="", y = "")+
-  scale_y_continuous(limits=c(0,10))
-
-# Elevation
-elevation_df <- temp_df[,c('ELEVATION','Protection')]
-elevation_df <- subset(elevation_df, ELEVATION >= 1e-2) #removing extremely negative values (so negative, must be wrong)
-elevation_df  <- melt(elevation_df, id.vars='Protection')
-elevation_df$Protection <- as.factor(elevation_df$Protection)
-elevation_df$Protection <- factor(elevation_df$Protection,levels(elevation_df$Protection)[c(2,1,3)])
-
-elevation_violin <- ggplot(elevation_df, aes(x=Protection, y=value, fill=Protection)) + 
-  geom_violin() + 
-  stat_summary(fun.y=median, geom="point", size=2, color="black")+
-  theme_classic()+
-  theme(legend.position='none')+
-  scale_fill_manual(values=plot_colorz)+
-  labs(title="Elevation",x="", y = "")+
-  scale_y_continuous(limits=c(0,7000))
-
-grid.arrange(lake_area_violin, elevation_violin, nrow=1)
-
-# par(mfrow=c(1,1))
-# temp_df$Protection <- factor(temp_df$Protection, levels=c("Strict", "Multi-use", "Unprotected")) #reorder boxes
-# boxplot(AREASQKM ~ Protection, data=temp_df, las=1, main='Lake area (sq km)', col=plot_colorz, ylim=c(0,5))
-# 
-# 
-# area_boxplot <- ggboxplot(temp_df, x = "Protection",
-#          y = c("AREASQKM"),
-#          combine = T, 
-#          color = "Protection", palette = "jco",
-#          ylab = "Sq km", 
-#          add = "median_iqr")
-# 
-# ggpar(area_boxplot, legend='none', ylim=c(0,1))
+######### Multi-panel violin plotz
+plot_colorz <- c('palegreen','forestgreen','tan','tan1','gray40')
 
 # CLIMATE
-temp_a <- na.omit(PADUS_protected_GAPS12_PRISM)
-temp_a$Protection <- 'Strict'
-temp_b <- na.omit(PADUS_protected_GAPS123_PRISM)
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- na.omit(PADUS_unprotected_GAPS123_PRISM)
-temp_c$Protection <- 'Unprotected'
+temp_var <- c('Tmean8110Cat','Precip8110Cat','ELEVATION','AREASQKM','CatAreaSqKm','WsAreaSqKm')
+temp_a <- protected_GAPS12_df_PADUS_PRISM[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_PRISM[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_PRISM[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_PRISM[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_PRISM[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-# http://www.sthda.com/english/wiki/print.php?id=132
-#library(devtools)
-#install_github("kassambara/easyGgplot2")
-#library(easyGgplot2)
 precip_df <- temp_df[,c('Precip8110Cat','Protection')]
 precip_df <- melt(precip_df, id.vars='Protection')
 precip_df$Protection <- as.factor(precip_df$Protection)
-precip_df$Protection <- factor(precip_df$Protection,levels(precip_df$Protection)[c(2,1,3)])
-
+precip_df$Protection <- factor(precip_df$Protection,levels(precip_df$Protection)[c(4,3,2,1,5)])
 precip_violin <- ggplot(precip_df, aes(x=Protection, y=value, fill=Protection)) + 
-  geom_violin() + 
+  geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Precipitation",x="", y = "")
+  labs(title="Precipitation",x="", y = "mm")
 
 temperature_df <- temp_df[,c('Tmean8110Cat','Protection')]
 temperature_df <- melt(temperature_df, id.vars='Protection')
 temperature_df$Protection <- as.factor(temperature_df$Protection)
-temperature_df$Protection <- factor(temperature_df$Protection,levels(temperature_df$Protection)[c(2,1,3)])
+temperature_df$Protection <- factor(temperature_df$Protection,levels(temperature_df$Protection)[c(4,3,2,1,5)])
 temperature_violin <- ggplot(temperature_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Temperature",x="", y = "")
+  labs(title="Temperature",x="", y = "deg C")
 
 grid.arrange(precip_violin, temperature_violin, nrow=1)
 
@@ -855,436 +332,446 @@ grid.arrange(precip_violin, temperature_violin, nrow=1)
 catchment_area_df <- temp_df[,c('CatAreaSqKm','Protection')]
 catchment_area_df <- melt(catchment_area_df, id.vars='Protection')
 catchment_area_df$Protection <- as.factor(catchment_area_df$Protection)
-catchment_area_df$Protection <- factor(catchment_area_df$Protection,levels(catchment_area_df$Protection)[c(2,1,3)])
+catchment_area_df$Protection <- factor(catchment_area_df$Protection,levels(catchment_area_df$Protection)[c(4,3,2,1,5)])
 catchment_area_violin <- ggplot(catchment_area_df, aes(x=Protection, y=log(value), fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Catchment area",x="", y = "")
 
 watershed_area_df <- temp_df[,c('WsAreaSqKm','Protection')]
 watershed_area_df <- melt(watershed_area_df, id.vars='Protection')
 watershed_area_df$Protection <- as.factor(watershed_area_df$Protection)
-watershed_area_df$Protection <- factor(watershed_area_df$Protection,levels(watershed_area_df$Protection)[c(2,1,3)])
+watershed_area_df$Protection <- factor(watershed_area_df$Protection,levels(watershed_area_df$Protection)[c(4,3,2,1,5)])
 watershed_area_violin <- ggplot(watershed_area_df, aes(x=Protection, y=log(value), fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Watershed area",x="", y = "")
 
-grid.arrange(lake_area_violin, catchment_area_violin, watershed_area_violin, nrow=1)
+grid.arrange(catchment_area_violin, watershed_area_violin, nrow=1)
+
+# Lake area and elevation
+lake_area_df <- temp_df[,c('AREASQKM','Protection')]
+lake_area_df <- melt(lake_area_df, id.vars='Protection')
+lake_area_df$Protection <- as.factor(lake_area_df$Protection)
+lake_area_df$Protection <- factor(lake_area_df$Protection,levels(lake_area_df$Protection)[c(4,3,2,1,5)])
+lake_area_violin <- ggplot(lake_area_df, aes(x=Protection, y=log(value), fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Lake area",x="", y = "log sq km")
+
+elevation_df <- temp_df[,c('ELEVATION','Protection')]
+elevation_df <- subset(elevation_df, ELEVATION >= 1e-2) #removing extremely negative values (so negative, must be wrong)
+elevation_df <- melt(elevation_df, id.vars='Protection')
+elevation_df$Protection <- as.factor(elevation_df$Protection)
+elevation_df$Protection <- factor(elevation_df$Protection,levels(elevation_df$Protection)[c(4,3,2,1,5)])
+elevation_violin <- ggplot(elevation_df, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Elevation",x="", y = "m")
+
+grid.arrange(lake_area_violin, elevation_violin, nrow=1)
 
 # LULC
-temp_a <- PADUS_protected_GAPS12_NLCD
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_NLCD
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_NLCD
-temp_c$Protection <- 'Unprotected'
-
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-# ploht <- ggboxplot(temp_df, x = "Protection",
-#                    y = c("PctTotalForest2011Cat", "PctTotalAg2011Cat", "PctTotalWetland2011Cat"),
-#                    combine = T,
-#                    ylab = "Percent",
-#                    color = "Protection", palette = plot_colorz, xlab=F)
-# ggpar(ploht, legend='none')
+temp_var <- c('PctTotalForest2011Cat','PctTotalAg2011Cat','PctTotalWetland2011Cat')
+temp_a <- protected_GAPS12_df_PADUS_NLCD[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_NLCD[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_NLCD[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_NLCD[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_NLCD[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
 forest_df <- temp_df[,c('PctTotalForest2011Cat','Protection')]
 forest_df <- melt(forest_df, id.vars='Protection')
 forest_df$Protection <- as.factor(forest_df$Protection)
-forest_df$Protection <- factor(forest_df$Protection,levels(forest_df$Protection)[c(2,1,3)])
+forest_df$Protection <- factor(forest_df$Protection,levels(forest_df$Protection)[c(4,3,2,1,5)])
 forest_violin <- ggplot(forest_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Forest",x="", y = "")
+  labs(title="Forest",x="", y = "Percent")
 
 ag_df <- temp_df[,c('PctTotalAg2011Cat','Protection')]
 ag_df <- melt(ag_df, id.vars='Protection')
 ag_df$Protection <- as.factor(ag_df$Protection)
-ag_df$Protection <- factor(ag_df$Protection,levels(ag_df$Protection)[c(2,1,3)])
+ag_df$Protection <- factor(ag_df$Protection,levels(ag_df$Protection)[c(4,3,2,1,5)])
 ag_violin <- ggplot(ag_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Agriculture",x="", y = "")
+  labs(title="Agriculture",x="", y = "Percent")
 
 wetland_df <- temp_df[,c('PctTotalWetland2011Cat','Protection')]
 wetland_df <- melt(wetland_df, id.vars='Protection')
 wetland_df$Protection <- as.factor(wetland_df$Protection)
-wetland_df$Protection <- factor(wetland_df$Protection,levels(wetland_df$Protection)[c(2,1,3)])
+wetland_df$Protection <- factor(wetland_df$Protection,levels(wetland_df$Protection)[c(4,3,2,1,5)])
 wetland_violin <- ggplot(wetland_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Wetlands",x="", y = "")
+  labs(title="Wetlands",x="", y = "Percent")
 
 grid.arrange(forest_violin, ag_violin, wetland_violin, nrow=1)
 
-# Toxic
-temp_a <- PADUS_protected_GAPS12_Toxic
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_Toxic
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_Toxic
-temp_c$Protection <- 'Unprotected'
-
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-superfund_df <- temp_df[,c('SuperfundDensCat','Protection')]
-superfund_df <- melt(superfund_df, id.vars='Protection')
-superfund_df$Protection <- as.factor(superfund_df$Protection)
-superfund_df$Protection <- factor(superfund_df$Protection,levels(superfund_df$Protection)[c(2,1,3)])
-superfund_violin <- ggplot(superfund_df, aes(x=Protection, y=value, fill=Protection)) + 
-  geom_violin() +
-  stat_summary(fun.y=median, geom="point", size=2, color="black")+
-  theme_classic()+
-  theme(legend.position='none')+
-  scale_fill_manual(values=plot_colorz)+
-  labs(title="Superfund",x="", y = "")
-
-# TRI
-TRI_df <- temp_df[,c('TRIDensCat','Protection')]
-TRI_df <- melt(TRI_df, id.vars='Protection')
-TRI_df$Protection <- as.factor(TRI_df$Protection)
-TRI_df$Protection <- factor(TRI_df$Protection,levels(TRI_df$Protection)[c(2,1,3)])
-TRI_violin <- ggplot(TRI_df, aes(x=Protection, y=value, fill=Protection)) + 
-  geom_violin() +
-  stat_summary(fun.y=median, geom="point", size=2, color="black")+
-  theme_classic()+
-  theme(legend.position='none')+
-  scale_fill_manual(values=plot_colorz)+
-  labs(title="TRI",x="", y = "")
-
-# NPDES
-NPDES_df <- temp_df[,c('NPDESDensCat','Protection')]
-NPDES_df <- melt(NPDES_df, id.vars='Protection')
-NPDES_df$Protection <- as.factor(NPDES_df$Protection)
-NPDES_df$Protection <- factor(NPDES_df$Protection,levels(NPDES_df$Protection)[c(2,1,3)])
-NPDES_violin <- ggplot(NPDES_df, aes(x=Protection, y=value, fill=Protection)) + 
-  geom_violin() +
-  stat_summary(fun.y=median, geom="point", size=2, color="black")+
-  theme_classic()+
-  theme(legend.position='none')+
-  scale_fill_manual(values=plot_colorz)+
-  labs(title="NPDES",x="", y = "")
-
-grid.arrange(superfund_violin, TRI_violin, NPDES_violin, nrow=1)
-
-# Mines
-temp_a <- PADUS_protected_GAPS12_mines
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_mines
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_mines
-temp_c$Protection <- 'Unprotected'
-
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-mines_df <- temp_df[,c('MineDensCat','Protection')]
-mines_df <- melt(mines_df, id.vars='Protection')
-mines_df$Protection <- as.factor(mines_df$Protection)
-mines_df$Protection <- factor(mines_df$Protection,levels(mines_df$Protection)[c(2,1,3)])
-mines_violin <- ggplot(mines_df, aes(x=Protection, y=value, fill=Protection)) + 
-  geom_violin() +
-  stat_summary(fun.y=median, geom="point", size=2, color="black")+
-  theme_classic()+
-  theme(legend.position='none')+
-  scale_fill_manual(values=plot_colorz)+
-  labs(title="Mines",x="", y = "")+
-  scale_y_continuous(limits=c(0,0.5))
-mines_violin
-
-# Road density
-temp_a <- PADUS_protected_GAPS12_roads
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_roads
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_roads
-temp_c$Protection <- 'Unprotected'
-
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+# Road density and impervious
+temp_var <- c('RdDensCat','RdDensWs')
+temp_a <- protected_GAPS12_df_PADUS_roads[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_roads[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_roads[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_roads[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_roads[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
 roads_df <- temp_df[,c('RdDensCat','Protection')]
 roads_df <- melt(roads_df, id.vars='Protection')
 roads_df$Protection <- as.factor(roads_df$Protection)
-roads_df$Protection <- factor(roads_df$Protection,levels(roads_df$Protection)[c(2,1,3)])
+roads_df$Protection <- factor(roads_df$Protection,levels(roads_df$Protection)[c(4,3,2,1,5)])
 roads_violin <- ggplot(roads_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Road Density",x="", y = "")
+  labs(title="Road density",x="", y = "km/sq km")
 
-# Impervious
-temp_a <- PADUS_protected_GAPS12_imp
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_imp
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_imp
-temp_c$Protection <- 'Unprotected'
+temp_var <- c('PctImp2011Cat','PctImp2011Ws')
+temp_a <- protected_GAPS12_df_PADUS_imp[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_imp[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_imp[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_imp[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_imp[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-impervious_df <- temp_df[,c('PctImp2011Cat','Protection')]
-impervious_df <- melt(impervious_df, id.vars='Protection')
-impervious_df$Protection <- as.factor(impervious_df$Protection)
-impervious_df$Protection <- factor(impervious_df$Protection,levels(impervious_df$Protection)[c(2,1,3)])
-impervious_violin <- ggplot(impervious_df, aes(x=Protection, y=value, fill=Protection)) + 
+imp_df <- temp_df[,c('PctImp2011Cat','Protection')]
+imp_df <- melt(imp_df, id.vars='Protection')
+imp_df$Protection <- as.factor(imp_df$Protection)
+imp_df$Protection <- factor(imp_df$Protection,levels(imp_df$Protection)[c(4,3,2,1,5)])
+imp_violin <- ggplot(imp_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Impervious",x="", y = "")+
-  scale_y_continuous(limits=c(0,10))
+  labs(title="Impervious",x="", y = "Percent")
 
-grid.arrange(roads_violin, impervious_violin, nrow=1)
+grid.arrange(roads_violin, imp_violin, nrow=1)
 
-# Deposition
-temp_a <- PADUS_protected_GAPS12_depos
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_depos
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_depos
-temp_c$Protection <- 'Unprotected'
+## Forest loss, fire
+temp_var <- c('TotalPctFrstLossCat','TotalPctFrstLossWs')
+temp_a <- protected_GAPS12_df_PADUS_ForestLoss[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_ForestLoss[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_ForestLoss[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_ForestLoss[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_ForestLoss[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-depos_df <- temp_df[,c('SN_2008Cat','Protection')]
-depos_df <- melt(depos_df, id.vars='Protection')
-depos_df$Protection <- as.factor(depos_df$Protection)
-depos_df$Protection <- factor(depos_df$Protection,levels(depos_df$Protection)[c(2,1,3)])
-depos_violin <- ggplot(depos_df, aes(x=Protection, y=value, fill=Protection)) + 
+ForestLoss_df <- temp_df[,c('TotalPctFrstLossCat','Protection')]
+ForestLoss_df <- melt(ForestLoss_df, id.vars='Protection')
+ForestLoss_df$Protection <- as.factor(ForestLoss_df$Protection)
+ForestLoss_df$Protection <- factor(ForestLoss_df$Protection,levels(ForestLoss_df$Protection)[c(4,3,2,1,5)])
+ForestLoss_violin <- ggplot(ForestLoss_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="SN deposition",x="", y = "")
-depos_violin
+  labs(title="ForestLoss",x="", y = "Percent")+
+  scale_y_continuous(limits=c(0,25))
 
-# Dams
-temp_a <- PADUS_protected_GAPS12_dams
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_dams
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_dams
-temp_c$Protection <- 'Unprotected'
+temp_var <- c('TotalPctFireCat','TotalPctFireWs')
+temp_a <- protected_GAPS12_df_PADUS_Fahr[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_Fahr[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_Fahr[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_Fahr[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_Fahr[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-dams_df <- temp_df[,c('NABD_DensCat','Protection')]
-dams_df <- melt(dams_df, id.vars='Protection')
-dams_df$Protection <- as.factor(dams_df$Protection)
-dams_df$Protection <- factor(dams_df$Protection,levels(dams_df$Protection)[c(2,1,3)])
-dams_violin <- ggplot(dams_df, aes(x=Protection, y=value, fill=Protection)) + 
+Fahr_df <- temp_df[,c('TotalPctFireCat','Protection')]
+Fahr_df <- melt(Fahr_df, id.vars='Protection')
+Fahr_df$Protection <- as.factor(Fahr_df$Protection)
+Fahr_df$Protection <- factor(Fahr_df$Protection,levels(Fahr_df$Protection)[c(4,3,2,1,5)])
+Fahr_violin <- ggplot(Fahr_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Dams",x="", y = "")+
-  scale_y_continuous(limits=c(0,0.01))
-dams_violin
+  labs(title="Fire",x="", y = "Percent")+
+  scale_y_continuous(limits=c(0,25))
 
-# Forest loss
-temp_a <- PADUS_protected_GAPS12_forestloss
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_forestloss
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_forestloss
-temp_c$Protection <- 'Unprotected'
+grid.arrange(ForestLoss_violin, Fahr_violin, nrow=1)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+## Runoff and baseflow
+temp_var <- c('RunoffCat','RunoffWs')
+temp_a <- protected_GAPS12_df_PADUS_Runoff[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_Runoff[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_Runoff[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_Runoff[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_Runoff[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-forest_loss_df <- temp_df[,c('TotalPctFrstLossCat','Protection')]
-forest_loss_df <- melt(forest_loss_df, id.vars='Protection')
-forest_loss_df$Protection <- as.factor(forest_loss_df$Protection)
-forest_loss_df$Protection <- factor(forest_loss_df$Protection,levels(forest_loss_df$Protection)[c(2,1,3)])
-forest_loss_violin <- ggplot(forest_loss_df, aes(x=Protection, y=value, fill=Protection)) + 
+Runoff_df <- temp_df[,c('RunoffCat','Protection')]
+Runoff_df <- melt(Runoff_df, id.vars='Protection')
+Runoff_df$Protection <- as.factor(Runoff_df$Protection)
+Runoff_df$Protection <- factor(Runoff_df$Protection,levels(Runoff_df$Protection)[c(4,3,2,1,5)])
+Runoff_violin <- ggplot(Runoff_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Forest loss",x="", y = "")+
-  scale_y_continuous(limits=c(0,0.1))
+  labs(title="Runoff",x="", y = "mm/month")
 
-# Fire
-temp_a <- PADUS_protected_GAPS12_fahr
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_fahr
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_fahr
-temp_c$Protection <- 'Unprotected'
+temp_var <- c('BFICat','BFIWs')
+temp_a <- protected_GAPS12_df_PADUS_Baseflow[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_Baseflow[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_Baseflow[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_Baseflow[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_Baseflow[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-fire_df <- temp_df[,c('TotalPctFireCat','Protection')]
-fire_df <- melt(fire_df, id.vars='Protection')
-fire_df$Protection <- as.factor(fire_df$Protection)
-fire_df$Protection <- factor(fire_df$Protection,levels(fire_df$Protection)[c(2,1,3)])
-fire_violin <- ggplot(fire_df, aes(x=Protection, y=value, fill=Protection)) + 
+Baseflow_df <- temp_df[,c('BFICat','Protection')]
+Baseflow_df <- melt(Baseflow_df, id.vars='Protection')
+Baseflow_df$Protection <- as.factor(Baseflow_df$Protection)
+Baseflow_df$Protection <- factor(Baseflow_df$Protection,levels(Baseflow_df$Protection)[c(4,3,2,1,5)])
+Baseflow_violin <- ggplot(Baseflow_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Fire",x="", y = "")+
-  scale_y_continuous(limits=c())
+  labs(title="Baseflow index",x="", y = "% baseflow of total inflow")
 
-grid.arrange(forest_loss_violin, fire_violin, nrow=1)
+grid.arrange(Runoff_violin, Baseflow_violin, nrow=1)
 
-# Wetness Index
-temp_a <- PADUS_protected_GAPS12_WetIndex
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_WetIndex
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_WetIndex
-temp_c$Protection <- 'Unprotected'
+## Dams
+temp_var <- c('NABD_DensCat','NABD_DensWs')
+temp_a <- protected_GAPS12_df_PADUS_Dams[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_Dams[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_Dams[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_Dams[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_Dams[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
+Dams_df <- temp_df[,c('NABD_DensCat','Protection')]
+Dams_df <- melt(Dams_df, id.vars='Protection')
+Dams_df$Protection <- as.factor(Dams_df$Protection)
+Dams_df$Protection <- factor(Dams_df$Protection,levels(Dams_df$Protection)[c(4,3,2,1,5)])
+Dams_violin <- ggplot(Dams_df, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Dam density",x="", y = "Dams/sq km")
+
+## Mines
+temp_var <- c('MineDensCat','MineDensWs')
+temp_a <- protected_GAPS12_df_PADUS_Mines[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_Mines[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_Mines[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_Mines[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_Mines[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
+
+Mines_df <- temp_df[,c('MineDensCat','Protection')]
+Mines_df <- melt(Mines_df, id.vars='Protection')
+Mines_df$Protection <- as.factor(Mines_df$Protection)
+Mines_df$Protection <- factor(Mines_df$Protection,levels(Mines_df$Protection)[c(4,3,2,1,5)])
+Mines_violin <- ggplot(Mines_df, aes(x=Protection, y=value, fill=Protection)) + 
+  geom_violin() +
+  stat_summary(fun.y=median, geom="point", size=2, color="black")+
+  theme_classic()+
+  theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  scale_fill_manual(values=plot_colorz)+
+  labs(title="Mine density",x="", y = "Mines/sq km")
+
+## Topo wetness index
+temp_var <- c('WetIndexCat','WetIndexWs')
+temp_a <- protected_GAPS12_df_PADUS_WetIndex[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_WetIndex[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_WetIndex[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_WetIndex[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_WetIndex[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
 WetIndex_df <- temp_df[,c('WetIndexCat','Protection')]
 WetIndex_df <- melt(WetIndex_df, id.vars='Protection')
 WetIndex_df$Protection <- as.factor(WetIndex_df$Protection)
-WetIndex_df$Protection <- factor(WetIndex_df$Protection,levels(WetIndex_df$Protection)[c(2,1,3)])
+WetIndex_df$Protection <- factor(WetIndex_df$Protection,levels(WetIndex_df$Protection)[c(4,3,2,1,5)])
 WetIndex_violin <- ggplot(WetIndex_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Wetness Index",x="", y = "")+
-  scale_y_continuous(limits=c())
-WetIndex_violin
+  labs(title="Wetness Index",x="", y = "")
 
-# Runoff
-temp_a <- PADUS_protected_GAPS12_runoff
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_runoff
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_runoff
-temp_c$Protection <- 'Unprotected'
+## Toxic sites
+temp_var <- c('NPDESDensCat','TRIDensCat','SuperfundDensCat')
+temp_a <- protected_GAPS12_df_PADUS_Toxic[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_Toxic[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_Toxic[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_Toxic[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_Toxic[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
 
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-runoff_df <- temp_df[,c('RunoffCat','Protection')]
-runoff_df <- melt(runoff_df, id.vars='Protection')
-runoff_df$Protection <- as.factor(runoff_df$Protection)
-runoff_df$Protection <- factor(runoff_df$Protection,levels(runoff_df$Protection)[c(2,1,3)])
-runoff_violin <- ggplot(runoff_df, aes(x=Protection, y=value, fill=Protection)) + 
+NPDES_df <- temp_df[,c('NPDESDensCat','Protection')]
+NPDES_df <- melt(NPDES_df, id.vars='Protection')
+NPDES_df$Protection <- as.factor(NPDES_df$Protection)
+NPDES_df$Protection <- factor(NPDES_df$Protection,levels(NPDES_df$Protection)[c(4,3,2,1,5)])
+NPDES_violin <- ggplot(NPDES_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Runoff",x="", y = "")+
-  scale_y_continuous(limits=c())
+  labs(title="Nat'l pollutant discharge sites",x="", y = "#/sq km")
 
-# Baseflow
-temp_a <- PADUS_protected_GAPS12_baseflow
-temp_a$Protection <- 'Strict'
-temp_b <- PADUS_protected_GAPS123_baseflow
-temp_b$Protection <- 'Multi-use'
-temp_b <- subset(temp_b, !(COMID %in% temp_a$COMID)) #only keep COMID not in strict protection
-temp_c <- PADUS_unprotected_GAPS123_baseflow
-temp_c$Protection <- 'Unprotected'
-
-temp_df <- rbind.data.frame(temp_a, temp_b, temp_c)
-temp_df <- temp_df[!duplicated(temp_df$COMID), ] #in case there are a few duplicates...not sure why there would be, but there are a few
-
-baseflow_df <- temp_df[,c('BFICat','Protection')]
-baseflow_df <- melt(baseflow_df, id.vars='Protection')
-baseflow_df$Protection <- as.factor(baseflow_df$Protection)
-baseflow_df$Protection <- factor(baseflow_df$Protection,levels(baseflow_df$Protection)[c(2,1,3)])
-baseflow_violin <- ggplot(baseflow_df, aes(x=Protection, y=value, fill=Protection)) + 
+TRI_df <- temp_df[,c('TRIDensCat','Protection')]
+TRI_df <- melt(TRI_df, id.vars='Protection')
+TRI_df$Protection <- as.factor(TRI_df$Protection)
+TRI_df$Protection <- factor(TRI_df$Protection,levels(TRI_df$Protection)[c(4,3,2,1,5)])
+TRI_violin <- ggplot(TRI_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="Baseflow",x="", y = "")+
-  scale_y_continuous(limits=c())
-grid.arrange(runoff_violin, baseflow_violin, nrow=1)
+  labs(title="Toxic release inventory sites",x="", y = "#/sq km")
 
-# Percent protected
-GAP12_df <- temp_df[,c('PctGAP_Status12Cat','Protection')]
-GAP12_df <- melt(GAP12_df, id.vars='Protection')
-GAP12_df$Protection <- as.factor(GAP12_df$Protection)
-GAP12_df$Protection <- factor(GAP12_df$Protection,levels(GAP12_df$Protection)[c(2,1,3)])
-GAP12_violin <- ggplot(GAP12_df, aes(x=Protection, y=value, fill=Protection)) + 
+Superfund_df <- temp_df[,c('SuperfundDensCat','Protection')]
+Superfund_df <- melt(Superfund_df, id.vars='Protection')
+Superfund_df$Protection <- as.factor(Superfund_df$Protection)
+Superfund_df$Protection <- factor(Superfund_df$Protection,levels(Superfund_df$Protection)[c(4,3,2,1,5)])
+Superfund_violin <- ggplot(Superfund_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="GAP 1-2, cat",x="", y = "")+
-  scale_y_continuous(limits=c())
-GAP12_violin
+  labs(title="Superfund sites",x="", y = "#/sq km")
 
-# Percent protected
-GAP123_df <- temp_df[,c('PctGAP_Status123Cat','Protection')]
-GAP123_df <- melt(GAP123_df, id.vars='Protection')
-GAP123_df$Protection <- as.factor(GAP123_df$Protection)
-GAP123_df$Protection <- factor(GAP123_df$Protection,levels(GAP123_df$Protection)[c(2,1,3)])
-GAP123_violin <- ggplot(GAP123_df, aes(x=Protection, y=value, fill=Protection)) + 
+grid.arrange(NPDES_violin, TRI_violin, Superfund_violin, nrow=1)
+
+## Deposition
+temp_var <- c('SN_2008Cat','SN_2008Ws')
+temp_a <- protected_GAPS12_df_PADUS_Deposition[,temp_var]
+temp_a$Protection <- 'Strict center'
+temp_b <- protected_GAPS12_df_PADUS_100pct_Deposition[,temp_var]
+temp_b$Protection <- 'Strict cat'
+temp_c <- protected_GAP3only_df_PADUS_Deposition[,temp_var]
+temp_c$Protection <- 'Multi-use center'
+temp_d <- protected_GAP3only_df_PADUS_100pct_Deposition[,temp_var]
+temp_d$Protection <- 'Multi-use cat'
+temp_e <- unprotected_df_Deposition[,temp_var]
+temp_e$Protection <- 'Unprotected'
+temp_df <- rbind.data.frame(temp_a, temp_b, temp_c, temp_d, temp_e)
+
+Deposition_df <- temp_df[,c('SN_2008Cat','Protection')]
+Deposition_df <- melt(Deposition_df, id.vars='Protection')
+Deposition_df$Protection <- as.factor(Deposition_df$Protection)
+Deposition_df$Protection <- factor(Deposition_df$Protection,levels(Deposition_df$Protection)[c(4,3,2,1,5)])
+Deposition_violin <- ggplot(Deposition_df, aes(x=Protection, y=value, fill=Protection)) + 
   geom_violin() +
   stat_summary(fun.y=median, geom="point", size=2, color="black")+
   theme_classic()+
   theme(legend.position='none')+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
-  labs(title="GAP 1-3, cat",x="", y = "")+
-  scale_y_continuous(limits=c())
-GAP123_violin
+  labs(title="Sulfur+nitrogen deposition",x="", y = "kg/ha/yr")
 
-# too slow
-# ggdensity(temp_df,
-#           x = c("PctTotalForest2011Cat", "PctTotalAg2011Cat", "PctTotalWetland2011Cat"),
-#           y = "..density..",
-#           combine = T,                  # Combine the 3 plots
-#           xlab = "Percent", 
-#           add = "median",                  # Add median line. 
-#           rug = T,                      # Add marginal rug
-#           color = "Protection", 
-#           fill = "Protection",
-#           palette = c('forestgreen','tan','gray40'))
 
 ## Summary stats for different variables: protected vs. unprotected
 # custom function calculates min, 5th percentile, median, 95th percentile, max, mean, sd
@@ -1306,26 +793,24 @@ forest_statz <- summary_statz(forest_df)
 ag_statz <- summary_statz(ag_df)
 wetland_statz <- summary_statz(wetland_df)
 roads_statz <- summary_statz(roads_df)
-impervious_statz <- summary_statz(impervious_df)
-forest_loss_statz <- summary_statz(forest_loss_df)
-fire_statz <- summary_statz(fire_df)
-depos_statz <- summary_statz(depos_df)
-mines_statz <- summary_statz(mines_df)
-dams_statz <- summary_statz(dams_df)
-superfund_statz <- summary_statz(superfund_df)
+impervious_statz <- summary_statz(imp_df)
+forest_loss_statz <- summary_statz(ForestLoss_df)
+fire_statz <- summary_statz(Fahr_df)
+depos_statz <- summary_statz(Deposition_df)
+mines_statz <- summary_statz(Mines_df)
+dams_statz <- summary_statz(Dams_df)
+superfund_statz <- summary_statz(Superfund_df)
 TRI_statz <- summary_statz(TRI_df)
 NPDES_statz <- summary_statz(NPDES_df)
 WetIndex_statz <- summary_statz(WetIndex_df)
-runoff_statz <- summary_statz(runoff_df)
-baseflow_statz <- summary_statz(baseflow_df)
+runoff_statz <- summary_statz(Runoff_df)
+baseflow_statz <- summary_statz(Baseflow_df)
 precip_statz <- summary_statz(precip_df)
 temperature_statz <- summary_statz(temperature_df)
-GAP12_statz <- summary_statz(GAP12_df)
-GAP123_statz <- summary_statz(GAP123_df)
 
 all_summary_statz <- rbind.data.frame(lake_area_statz, elevation_statz, catchment_area_statz, watershed_area_statz,
                                       forest_statz, ag_statz, wetland_statz, roads_statz, impervious_statz,
                                       forest_loss_statz, fire_statz, depos_statz, mines_statz, dams_statz,
                                       superfund_statz, TRI_statz, NPDES_statz, WetIndex_statz, precip_statz,
-                                      temperature_statz, runoff_statz, baseflow_statz, GAP12_statz, GAP123_statz)
+                                      temperature_statz, runoff_statz, baseflow_statz)
 #write.csv(all_summary_statz, file='Data/protected_v_unprotected_stats.csv')
