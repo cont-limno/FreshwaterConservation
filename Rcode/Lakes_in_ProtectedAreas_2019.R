@@ -11,6 +11,7 @@ library(vioplot)
 library(rgdal)
 library(gridExtra)
 library(dplyr)
+library(ggplot2)
 
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
@@ -65,6 +66,10 @@ PADUS_LakeCat$PctGAP_Status123Ws <- PADUS_LakeCat$PctGAP_Status1Ws + PADUS_LakeC
 
 # get rid of unwanted columns
 PADUS_LakeCat <- PADUS_LakeCat[,c('COMID','PctGAP_Status12Cat','PctGAP_Status12Ws','PctGAP_Status123Cat','PctGAP_Status123Ws','PctGAP_Status3Cat','PctGAP_Status3Ws')]
+
+# how correlated is catchment protection with watershed protection?
+cor(PADUS_LakeCat$PctGAP_Status12Cat, PADUS_LakeCat$PctGAP_Status12Ws, method='pearson', use='pairwise.complete.obs')
+cor(PADUS_LakeCat$PctGAP_Status3Cat, PADUS_LakeCat$PctGAP_Status3Ws, method='pearson', use='pairwise.complete.obs')
 
 ## Basic subsetting and joining PADUS data to lakes
 # Strictly protected lakes
@@ -141,13 +146,32 @@ png("Figures/protected_lakes_histogram.png", width = 7,height = 5,units = 'in',r
   mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
 dev.off()
 
-# Create subset of lakes with fully protected catchments
+# What proportion of lakes that occur in protected areas has X amount of catchment/watershed protection?
+summary(protected_GAPS12_df_PADUS)
+nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat < 20))/nrow(protected_GAPS12_df_PADUS)
+nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws < 20))/nrow(protected_GAPS12_df_PADUS)
+nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat > 80))/nrow(protected_GAPS12_df_PADUS)
+nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws > 80))/nrow(protected_GAPS12_df_PADUS)
+
+summary(protected_GAP3only_df_PADUS)
+nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat < 20))/nrow(protected_GAP3only_df_PADUS)
+nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws < 20))/nrow(protected_GAP3only_df_PADUS)
+nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat > 80))/nrow(protected_GAP3only_df_PADUS)
+nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws > 80))/nrow(protected_GAP3only_df_PADUS)
+
+
+
+# Create subset of lakes with fully protected catchments/watersheds
 protected_GAPS12_df_PADUS_100pct <- subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat >= 100)
 protected_GAP3only_df_PADUS_100pct <- subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat >= 100)
+nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws >= 100))
+nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws >= 100))
 
 # What proportion of lakes have fully protected catchments/watersheds?
 nrow(protected_GAPS12_df_PADUS_100pct)/total_n_lakes
 nrow(protected_GAP3only_df_PADUS_100pct)/total_n_lakes
+nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws >= 100))/total_n_lakes
+nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws >= 100))/total_n_lakes
 
 ##  Violin plot of protection across all US lakes
 all_lake_COMID <- c(unprotected_df$COMID, protected_GAPS12_df_PADUS$COMID, protected_GAP3only_df_PADUS$COMID) 
@@ -170,6 +194,12 @@ png("Figures/violin_pct_protected.png", width = 7,height = 5,units = 'in',res=30
   axis(side=2,at=seq(0,100,10),labels=seq(0,100,10))
   title(ylab='Percent protected', line=2.2)
 dev.off()
+
+# how many lakes have 0 protection?
+length(subset(v1, v1 <1 ))/length(v1) #strict cat
+length(subset(v2, v2 <1 ))/length(v2) #multi use cat
+length(subset(v3, v3 <1 ))/length(v3) #strict ws
+length(subset(v4, v1 <1 ))/length(v4) # multi-use ws
 
 ### now see if protected vs. unprotected lakes have different characteristics
 # calculate some total/new variables
@@ -358,7 +388,7 @@ watershed_area_violin <- ggplot(watershed_area_df, aes(x=Protection, y=log(value
   scale_fill_manual(values=plot_colorz)+
   labs(title="Watershed area",x="", y = "")
 
-grid.arrange(catchment_area_violin, watershed_area_violin, nrow=1)
+grid.arrange(lake_area_violin, catchment_area_violin, watershed_area_violin, nrow=1)
 
 # Lake area and elevation
 lake_area_df <- temp_df[,c('AREASQKM','Protection')]
@@ -387,8 +417,6 @@ elevation_violin <- ggplot(elevation_df, aes(x=Protection, y=value, fill=Protect
   theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Elevation",x="", y = "m")
-
-grid.arrange(lake_area_violin, elevation_violin, nrow=1)
 
 # LULC
 temp_var <- c('PctTotalForest2011Cat','PctTotalAg2011Cat','PctTotalWetland2011Cat')
@@ -497,8 +525,6 @@ imp_violin <- ggplot(imp_df, aes(x=Protection, y=value, fill=Protection)) +
   theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Impervious",x="", y = "Percent")
-
-grid.arrange(roads_violin, imp_violin, nrow=1)
 
 ## Forest loss, fire
 temp_var <- c('TotalPctFrstLossCat','TotalPctFrstLossWs')
@@ -639,6 +665,8 @@ Dams_violin <- ggplot(Dams_df, aes(x=Protection, y=value, fill=Protection)) +
   scale_fill_manual(values=plot_colorz)+
   labs(title="Dam density",x="", y = "Dams/sq km")
 
+grid.arrange(Runoff_violin, Baseflow_violin, Dams_violin, nrow=1)
+
 ## Mines
 temp_var <- c('MineDensCat','MineDensWs')
 temp_a <- protected_GAPS12_df_PADUS_Mines[,temp_var]
@@ -666,6 +694,8 @@ Mines_violin <- ggplot(Mines_df, aes(x=Protection, y=value, fill=Protection)) +
   scale_fill_manual(values=plot_colorz)+
   labs(title="Mine density",x="", y = "Mines/sq km")
 
+grid.arrange(roads_violin, imp_violin, Mines_violin, nrow=1)
+
 ## Topo wetness index
 temp_var <- c('WetIndexCat','WetIndexWs')
 temp_a <- protected_GAPS12_df_PADUS_WetIndex[,temp_var]
@@ -692,6 +722,9 @@ WetIndex_violin <- ggplot(WetIndex_df, aes(x=Protection, y=value, fill=Protectio
   theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Wetness Index",x="", y = "")
+
+grid.arrange(Dams_violin, Mines_violin, nrow=1)
+grid.arrange(elevation_violin, WetIndex_violin, nrow=1)
 
 ## Toxic sites
 temp_var <- c('NPDESDensCat','TRIDensCat','SuperfundDensCat')
@@ -774,7 +807,7 @@ Deposition_violin <- ggplot(Deposition_df, aes(x=Protection, y=value, fill=Prote
   theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Sulfur+nitrogen deposition",x="", y = "kg/ha/yr")
-
+Deposition_violin
 
 ## Summary stats for different variables: protected vs. unprotected
 # custom function calculates min, 5th percentile, median, 95th percentile, max, mean, sd
@@ -819,7 +852,7 @@ all_summary_statz <- rbind.data.frame(lake_area_statz, elevation_statz, catchmen
 #write.csv(all_summary_statz, file='Data/protected_v_unprotected_stats.csv')
 
 ############# Analyze by LAGOS conn class #################
-# Summarize conn types for all lakes
+## Summarize conn types for all lakes
 LakeConn_countz <- as.data.frame(LAGOSconn %>%
                                    group_by(LakeConnec) %>%
                                    tally())
@@ -836,6 +869,7 @@ protected_GAPS12_conn_countz <- as.data.frame(protected_GAPS12_df_PADUS_conn %>%
 protected_GAPS12_conn_countz <- merge(protected_GAPS12_conn_countz, LakeConn_countz, by='LakeConnec')
 colnames(protected_GAPS12_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
 protected_GAPS12_conn_countz$prop_protected <- protected_GAPS12_conn_countz$n_protected/protected_GAPS12_conn_countz$n_total
+protected_GAPS12_conn_countz$Group <- 'Strict center'
 
 # multi-use, lake center
 protected_GAP3only_df_PADUS_conn <- merge(protected_GAP3only_df_PADUS, LAGOSconn, by.x='COMID', 
@@ -847,6 +881,7 @@ protected_GAPS3only_conn_countz <- as.data.frame(protected_GAP3only_df_PADUS_con
 protected_GAPS3only_conn_countz <- merge(protected_GAPS3only_conn_countz, LakeConn_countz, by='LakeConnec')
 colnames(protected_GAPS3only_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
 protected_GAPS3only_conn_countz$prop_protected <- protected_GAPS3only_conn_countz$n_protected/protected_GAPS3only_conn_countz$n_total
+protected_GAPS3only_conn_countz$Group <- 'Multi-use center'
 
 # strict, 100% cat protection
 protected_GAPS12_df_PADUS_100pct_conn <- merge(protected_GAPS12_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
@@ -858,6 +893,7 @@ protected_GAPS12_100pct_conn_countz <- as.data.frame(protected_GAPS12_df_PADUS_1
 protected_GAPS12_100pct_conn_countz <- merge(protected_GAPS12_100pct_conn_countz, LakeConn_countz, by='LakeConnec')
 colnames(protected_GAPS12_100pct_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
 protected_GAPS12_100pct_conn_countz$prop_protected <- protected_GAPS12_100pct_conn_countz$n_protected/protected_GAPS12_100pct_conn_countz$n_total
+protected_GAPS12_100pct_conn_countz$Group <- 'Strict cat'
 
 # multi-use, 100% cat protection
 protected_GAP3only_df_PADUS_100pct_conn <- merge(protected_GAP3only_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
@@ -869,6 +905,7 @@ protected_GAP3only_100pct_conn_countz <- as.data.frame(protected_GAP3only_df_PAD
 protected_GAP3only_100pct_conn_countz <- merge(protected_GAP3only_100pct_conn_countz, LakeConn_countz, by='LakeConnec')
 colnames(protected_GAP3only_100pct_conn_countz) <- c('LakeConnec','n_protected', 'n_total')
 protected_GAP3only_100pct_conn_countz$prop_protected <- protected_GAP3only_100pct_conn_countz$n_protected/protected_GAP3only_100pct_conn_countz$n_total
+protected_GAP3only_100pct_conn_countz$Group <- 'Multi-use cat'
 
 # unprotected
 unprotected_df_conn <- merge(unprotected_df, LAGOSconn, by.x='COMID', 
@@ -879,19 +916,70 @@ unprotected_df_conn_countz <- as.data.frame(unprotected_df_conn %>%
                                               tally())
 unprotected_df_conn_countz <- merge(unprotected_df_conn_countz, LakeConn_countz, by='LakeConnec')
 colnames(unprotected_df_conn_countz) <- c('LakeConnec','n_unprotected', 'n_total')
-unprotected_df_conn_countz$prop_unprotected <- unprotected_df_conn_countz$n_unprotected/unprotected_df_conn_countz$n_total
+unprotected_df_conn_countz$prop_protected <- unprotected_df_conn_countz$n_unprotected/unprotected_df_conn_countz$n_total
+unprotected_df_conn_countz$Group <- 'Unprotected'
+
+## Stacked barplots
+stacked_df <- rbind.data.frame(protected_GAPS12_conn_countz[,c(1,4,5)],protected_GAPS3only_conn_countz[,c(1,4,5)],
+                               unprotected_df_conn_countz[,c(1,4,5)])
+stacked_df$Group <- as.factor(stacked_df$Group)
+
+#png('Figures/stacked_bar_conn_type.png',width = 7.5,height = 4.75,units = 'in',res=300)
+stack_gg1 <- ggplot(stacked_df, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Proportion of lakes protected") +
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  ggtitle('A) Protected lake = lake center in protected area')+
+  scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) +
+  scale_x_discrete(labels=c('Drainage, lake/stream','Drainage, stream','Headwater','Isolated'))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  theme(axis.title.y = element_text(vjust=2.7))+ #nudge y axis label away from axis a bit
+  scale_fill_manual("legend", values = c("Multi-use center" = "navajowhite2", "Strict center" = "olivedrab3","Unprotected" = "gray70"),
+                    labels=c('Multi-use','Strict','Unprotected'))+
+  #theme(legend.position=c(0.88,0.16))+ #manually reposition legend inside plot
+  theme(legend.position='none')+
+  theme(legend.title=element_blank()) #remove legend title
+  stack_gg1
+#dev.off()
+
+# Same stacked bar idea, but treating protected lakes as those with fully protected catchments
+# calculate "unprotected" based on all lake catchments that are not 100% protected (strict or multi-use)
+temp_ryan <- unprotected_df_conn_countz[,c(1,4,5)]
+temp_ryan$prop_protected <- 1- (protected_GAPS12_100pct_conn_countz$prop_protected + protected_GAP3only_100pct_conn_countz$prop_protected)
+stacked_df2 <- rbind.data.frame(protected_GAPS12_100pct_conn_countz[,c(1,4,5)],protected_GAP3only_100pct_conn_countz[,c(1,4,5)], temp_ryan)
+
+#png('Figures/stacked_bar_conn_type_cat100.png',width = 7.5,height = 4.75,units = 'in',res=300)
+stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Proportion of lakes protected") +
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  ggtitle('B) Protected lake = 100% catchment protected')+
+  scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) +
+  scale_x_discrete(labels=c('Drainage, lake/stream','Drainage, stream','Headwater','Isolated'))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  theme(axis.title.y = element_text(vjust=2.7))+ #nudge y axis label away from axis a bit
+  scale_fill_manual("legend", values = c("Multi-use cat" = "navajowhite2", "Strict cat" = "olivedrab3","Unprotected" = "gray70"),
+                    labels=c('Multi-use','Strict','Unprotected'))+
+  theme(legend.position=c(0.86,0.21))+ #manually reposition legend inside plot
+  theme(legend.text=element_text(size=8))+
+  theme(legend.title=element_blank()) #remove legend title
+  stack_gg2
+#dev.off()
+
+# multi-panel stacked barplot for different definitions of lake protection
+png('Figures/panel_stacked_bar_conn_type_cat100.png',height = 7.5,width = 6,units = 'in',res=300)
+  grid.arrange(stack_gg1, stack_gg2, nrow=2)
+dev.off()
+
+# make panel of the previous two plots
 
 
-## Barplots
-par(mfrow=c(2,3))
-barplot_labs <- c('DRLS','DRS','HW','ISOL')
-barplot_ylim <- c(0,0.9)
-barplot(protected_GAPS12_conn_countz$prop_protected, names.arg=barplot_labs, main='Strict, center', ylim=barplot_ylim)
-barplot(protected_GAPS12_100pct_conn_countz$prop_protected, names.arg=barplot_labs, main='Strict, cat', ylim=barplot_ylim)
-barplot(protected_GAPS3only_conn_countz$prop_protected, names.arg=barplot_labs, main='Multi-use, center', ylim=barplot_ylim)
-barplot(protected_GAP3only_100pct_conn_countz$prop_protected, names.arg=barplot_labs, main='Multi-use, cat', ylim=barplot_ylim)
-barplot(unprotected_df_conn_countz$prop_unprotected, names.arg=barplot_labs, main='Unprotected', ylim=barplot_ylim)
-
-## How about a stacked bar??
-
-
+######################### who actually looked this far down? ######################################
