@@ -94,23 +94,26 @@ unprotected_df <- unprotected_df[!duplicated(unprotected_df$COMID),] #remove dup
 unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAPS12_df_PADUS$COMID))#remove strictly protected lakes
 unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAP3only_df_PADUS$COMID))#remove multi-use lakes
 
+# save unprotected COMIDs
+write.csv(unprotected_df$COMID, "Data/unprotected_COMID.csv")
+
 ## What proportion of lakes is protected/unprotected (simply falls within a protected area)?
 total_n_lakes <- nrow(unprotected_df) + nrow(protected_GAP3only_df_PADUS) + nrow(protected_GAPS12_df_PADUS)
 nrow(protected_GAPS12_df_PADUS)/total_n_lakes
 nrow(protected_GAP3only_df_PADUS)/total_n_lakes
 nrow(unprotected_df)/total_n_lakes
 
-# # Export shapefiles of % protected for mapping in ArcGIS (first merge back to NHD pts)
+# # # Export shapefiles of % protected for mapping in ArcGIS (first merge back to NHD pts)
 # PADUS_protected_GAPS12_export <- merge(NHD_pts, protected_GAPS12_df_PADUS, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
 # layername <- "NHD_protect_pts_GAPS12_pct"
 # writeOGR(PADUS_protected_GAPS12_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-# # #
+# # # #
 # PADUS_protected_GAP3only_export <- merge(NHD_pts, protected_GAP3only_df_PADUS, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
 # layername <- "NHD_protect_pts_GAP3only_pct"
 # writeOGR(PADUS_protected_GAP3only_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-# # #
+# # # #
 # PADUS_unprotected_export <- merge(NHD_pts, unprotected_df, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
 # layername <- "NHD_unprotected_pts"
@@ -158,8 +161,6 @@ nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat < 20))/nrow(protected
 nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws < 20))/nrow(protected_GAP3only_df_PADUS)
 nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat > 80))/nrow(protected_GAP3only_df_PADUS)
 nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws > 80))/nrow(protected_GAP3only_df_PADUS)
-
-
 
 # Create subset of lakes with fully protected catchments/watersheds
 protected_GAPS12_df_PADUS_100pct <- subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat >= 100)
@@ -388,7 +389,7 @@ watershed_area_violin <- ggplot(watershed_area_df, aes(x=Protection, y=log(value
   scale_fill_manual(values=plot_colorz)+
   labs(title="Watershed area",x="", y = "")
 
-grid.arrange(lake_area_violin, catchment_area_violin, watershed_area_violin, nrow=1)
+grid.arrange(catchment_area_violin, watershed_area_violin, nrow=1)
 
 # Lake area and elevation
 lake_area_df <- temp_df[,c('AREASQKM','Protection')]
@@ -417,6 +418,8 @@ elevation_violin <- ggplot(elevation_df, aes(x=Protection, y=value, fill=Protect
   theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Elevation",x="", y = "m")
+
+grid.arrange(lake_area_violin, elevation_violin, nrow=1)
 
 # LULC
 temp_var <- c('PctTotalForest2011Cat','PctTotalAg2011Cat','PctTotalWetland2011Cat')
@@ -525,6 +528,8 @@ imp_violin <- ggplot(imp_df, aes(x=Protection, y=value, fill=Protection)) +
   theme(axis.text.x = element_text(angle = 50, hjust = 1))+
   scale_fill_manual(values=plot_colorz)+
   labs(title="Impervious",x="", y = "Percent")
+
+grid.arrange(roads_violin, imp_violin, nrow=1)
 
 ## Forest loss, fire
 temp_var <- c('TotalPctFrstLossCat','TotalPctFrstLossWs')
@@ -978,8 +983,4 @@ stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = 
 png('Figures/panel_stacked_bar_conn_type_cat100.png',height = 7.5,width = 6,units = 'in',res=300)
   grid.arrange(stack_gg1, stack_gg2, nrow=2)
 dev.off()
-
-# make panel of the previous two plots
-
-
 ######################### who actually looked this far down? ######################################
