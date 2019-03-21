@@ -17,7 +17,7 @@ library(ggplot2)
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
 
 # lower 48 states
-lower48 <- shapefile("C:/Ian_GIS/cb_2016_us_state_500k/lower48.shp") #same crs as NHD_pts
+lower48 <- shapefile("Data/lower48/lower48.shp") #same crs as NHD_pts
 
 ## Protected lakes (centroids)
 protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/Arcgis/NHD_pts_GAPS12_ArcGIS_select.shp")

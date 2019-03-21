@@ -29,7 +29,7 @@ protected_GAP3only_COMIDs_100 <- unique(protected_GAP3only_COMIDs_100@data$COMID
 unprotected_COMIDs <- read.csv("Data/unprotected_COMID.csv")[,2]
 
 # lower 48 states
-lower48 <- shapefile("C:/Ian_GIS/cb_2016_us_state_500k/lower48.shp") #same crs as NHD_pts
+lower48 <- shapefile("Data/lower48/lower48.shp") #same crs as NHD_pts
 
 # Protected land by GAP status by local catchments and network watersheds (LakeCat)
 # From US Protected Areas Database (PADUS) v 1.4
