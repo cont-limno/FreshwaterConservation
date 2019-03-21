@@ -95,7 +95,7 @@ unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAPS12_df_PADUS$
 unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAP3only_df_PADUS$COMID))#remove multi-use lakes
 
 # save unprotected COMIDs
-write.csv(unprotected_df$COMID, "Data/unprotected_COMID.csv")
+#write.csv(unprotected_df$COMID, "Data/unprotected_COMID.csv")
 
 ## What proportion of lakes is protected/unprotected (simply falls within a protected area)?
 total_n_lakes <- nrow(unprotected_df) + nrow(protected_GAP3only_df_PADUS) + nrow(protected_GAPS12_df_PADUS)

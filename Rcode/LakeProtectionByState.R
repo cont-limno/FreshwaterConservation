@@ -61,8 +61,15 @@ NHD_pts_lakes_PADUS$PctGAP_Status12Ws <- NHD_pts_lakes_PADUS$PctGAP_Status1Ws + 
 LakeProtection_byState <- protected_lakes_by_state(NHD_pts_lakes_PADUS, lower48)
 LakeProtection_byNARS <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regions) #warning: slow
 
+LakeProtection_byState_Export <- LakeProtection_byState[,1:2]
+LakeProtection_byState_Export$Strict_ctr <- paste0(LakeProtection_byState$ProtectedLakes_gap12_ctr, ' (', round(LakeProtection_byState$PropProtected_gap12_ctr,2),')')
+LakeProtection_byState_Export$Multi_ctr <- paste0(LakeProtection_byState$ProtectedLakes_gap3_ctr, ' (', round(LakeProtection_byState$PropProtected_gap3_ctr,2),')')
+LakeProtection_byState_Export$Strict_Cat100 <- paste0(LakeProtection_byState$ProtectedLakes_gap12_Cat100, ' (', round(LakeProtection_byState$PropProtected_gap12_Cat100,2),')')
+LakeProtection_byState_Export$Multi_Cat100 <- paste0(LakeProtection_byState$ProtectedLakes_gap3_Cat100, ' (', round(LakeProtection_byState$PropProtected_gap3_Cat100,2),')')
+LakeProtection_byState_Export$Unprotected <- paste0(LakeProtection_byState$unprotected_lakes, ' (', round(LakeProtection_byState$PropUnprotected,2),')')
+
 # export table and reformat in Excel
-#write.csv(LakeProtection_byState, file='Data/LakeProtection_byState.csv')
+#write.csv(LakeProtection_byState_Export, file='Data/LakeProtection_byState.csv')
 #write.csv(LakeProtection_byNARS, file='Data/LakeProtection_byNARS.csv')
 
 ### USES INTERMEDIATE DATA FROM FUNCTIONS: data only exist if run functions line by line
@@ -209,7 +216,7 @@ ecoregion_ctr_plot <- ggplot(melted_Cat_ctr_NARS, aes(x = reorder(Ecoregion, -nL
   scale_fill_manual("legend", values = c("PropProtected_gap12_ctr" = "olivedrab3", "PropProtected_gap3_ctr" = "navajowhite2"),
                     labels=c('Strict','Multi-use'))+
   geom_hline(yintercept=0.17, linetype='dashed', color='black')+
-  theme(legend.position=c(0.07,0.9))+ #manually reposition legend inside plot
+  theme(legend.position=c(0.12,0.9))+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
 
 ecoregion_Cat100_plot <- ggplot(melted_Cat_Cat100_NARS, aes(x = reorder(Ecoregion, -nLakes), y = value, fill = variable)) + 
@@ -226,9 +233,9 @@ ecoregion_Cat100_plot <- ggplot(melted_Cat_Cat100_NARS, aes(x = reorder(Ecoregio
   scale_fill_manual("legend", values = c("PropProtected_gap12_Cat100" = "olivedrab3", "PropProtected_gap3_Cat100" = "navajowhite2"),
                     labels=c('Strict','Multi-use'))+
   geom_hline(yintercept=0.17, linetype='dashed', color='black')+
-  theme(legend.position=c(0.07,0.9))+ #manually reposition legend inside plot
+  theme(legend.position="none")+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
 
-#png('Figures/LakeProtectionByNARS.png',width = 7.5,height = 6,units = 'in',res=300)
+#png('Figures/LakeProtectionByNARS.png',width = 4.5,height = 6,units = 'in',res=300)
   grid.arrange(ecoregion_ctr_plot, ecoregion_Cat100_plot, nrow=2)
 #dev.off()
