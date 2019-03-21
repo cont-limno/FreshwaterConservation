@@ -65,6 +65,11 @@ LakeProtection_byNARS <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regio
 #write.csv(LakeProtection_byState, file='Data/LakeProtection_byState.csv')
 #write.csv(LakeProtection_byNARS, file='Data/LakeProtection_byNARS.csv')
 
+### USES INTERMEDIATE DATA FROM FUNCTIONS: data only exist if run functions line by line
+#state_NARS_COMID <- merge(NARS_COMID[,c(2:4)], lower48_COMID[,c(6,11)], by='COMID',all=F)
+#state_NARS_COMID <- state_NARS_COMID[!duplicated(state_NARS_COMID$COMID),] #remove duplicate COMID
+#write.csv(state_NARS_COMID, file='Data/state_NARS_COMID.csv')
+
 ## Mapping
 # by state
 lake_countz_protected100_lower48_shp <- merge(lower48, LakeProtection_byState, by.x='NAME', by.y='State')

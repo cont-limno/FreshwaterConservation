@@ -28,6 +28,9 @@ protected_GAP3only_COMIDs_100 <- unique(protected_GAP3only_COMIDs_100@data$COMID
 # unprotected lake COMIDs
 unprotected_COMIDs <- read.csv("Data/unprotected_COMID.csv")[,2]
 
+# NARS ecoregion and US state table by COMID
+state_NARS_COMIDs <- read.csv("Data/state_NARS_COMID.csv")
+
 # lower 48 states
 lower48 <- shapefile("Data/lower48/lower48.shp") #same crs as NHD_pts
 
@@ -194,8 +197,10 @@ l <- PADUS_Deposition[,c('COMID','SN_2008Cat')]
 m <- PADUS_Fahr[,c('COMID','TotalPctFireCat')]
 n <- PADUS_ForestLoss[,c('COMID','TotalPctFrstLossCat')]
 o <- PADUS_PRISM[,c('COMID','Precip8110Cat','Tmean8110Cat')]
+p <- state_NARS_COMIDs[,c('COMID','WSA9','WSA9_NAME','STUSPS')]
 #xx <- Reduce(function(...) merge(..., all=T), list(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o))
-cat_table <- Reduce(function(...) merge(..., all=T), list(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o))
+cat_table <- Reduce(function(...) merge(..., all=T), list(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p))
+cat_table <- cat_table[!duplicated(cat_table$COMID),] #remove duplicate COMIDs
 #cat_table <- xx[,c(1,4,5,8,9,10,11,12,13,2,20:22,24,26:29,34,36,38,40,42,44,46:48,52,54,56,58,59)]
 #Ws_table <- xx[,c(1,6,7,14:19,3,20,21,23,25,30:33,35,37,39,41,43,45,49:51,53,55,57,60,61)]
 #write.csv(cat_table, file="Data/Nick/catchment_table.csv")
