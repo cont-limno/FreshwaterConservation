@@ -2,6 +2,7 @@
 library(sjPlot)
 library(ggplot2)
 library(dplyr)
+library(cowplot)
 
 catch_dat<-read.csv("Data/Nick/catchment_table 2.csv", header=T)
 
@@ -89,6 +90,9 @@ ggsave(filename=paste(responses[j],".png", sep=""),plot=plot, path="~/Documents/
 
 ###plotting heat maps of coefficients by region
 
+
+#removing some covariates with low variability
+logistic_coef<-logistic_coef[!(logistic_coef$covariate %in% c("MineDensCat","TotalPctFireCat","NPDESDensCat","SuperfundDensCat","TRIDensCat","NABD_DensCat", "PctConif2011Cat")),]
 #figuring out the mean coeficient value for each covariate across all protection types so I can order them in the plot.
 ordering_coef<-logistic_coef %>% group_by(covariate) %>% dplyr::summarize(mean_coef=mean(coef, na.rm=T))
 #setting the covariate order
@@ -99,28 +103,40 @@ logistic_coef$covariate_fac<-factor(logistic_coef$covariate,levels=(data.frame(o
 logistic_coef$region_fac<-factor(logistic_coef$region, levels=rev(c("NAP","CPL", "SAP", "TPL","UMW", "SPL", "NPL","WMT", "XER")))
 
 #plotting the heatmap. removing some covariates that didn't have a enough unique values to get good estimates from the logistic regression
-ProtectGAP12_ctr_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP12_ctr_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("WSA9 Ecoregion", position="top") 
+ProtectGAP12_ctr_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP12_ctr_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("", position="bottom") + ggtitle("ProtectGAP12_ctr")
 
-ProtectGAP3_ctr_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP3_ctr_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("WSA9 Ecoregion", position="top") 
+ProtectGAP3_ctr_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP3_ctr_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("", position="bottom") + ggtitle("ProtectGAP3_ctr") 
 
-ProtectGAP12Cat_100_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP12Cat_100_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("WSA9 Ecoregion", position="top")
+ProtectGAP12Cat_100_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP12Cat_100_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("", position="bottom") + ggtitle("ProtectGAP12Cat")+ theme(axis.text.y = element_blank())
 
-ProtectGAP3Cat_100_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP3Cat_100_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("WSA9 Ecoregion", position="top") 
-
-
-Unprotected_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="Unprotected_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-1.8,2.16)) + scale_y_discrete("") + scale_x_discrete("WSA9 Ecoregion", position="top")
+ProtectGAP3Cat_100_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP3Cat_100_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + scale_y_discrete("") + scale_x_discrete("", position="bottom") + ggtitle("ProtectGAP3Cat")+ theme(axis.text.y = element_blank())
 
 
-
-ggsave(filename="ProtectGAP12_ctr.png",plot=ProtectGAP12_ctr_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=5.5, height=5.5)
-
-ggsave(filename="ProtectGAP3_ctr.png",plot=ProtectGAP3_ctr_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=5.5, height=5.5)
+Unprotected_plot<-ggplot() + geom_tile(data=logistic_coef[logistic_coef$response=="Unprotected_fac" ,], aes(x=region_fac, y=covariate_fac, fill=coef)) + scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-1.8,2.16)) + scale_y_discrete("") + scale_x_discrete("", position="top")
 
 
-ggsave(filename="ProtectGAP3Cat_100.png",plot=ProtectGAP3Cat_100_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=5.5, height=5.5)
+ProtectGAP12_ctr_plot_noleg<-ProtectGAP12_ctr_plot + guides(fill=F)
+ProtectGAP3_ctr_plot_noleg<-ProtectGAP3_ctr_plot + guides(fill=F)
+ProtectGAP12Cat_100_plot_noleg<-ProtectGAP12Cat_100_plot + guides(fill=F)
+ProtectGAP3Cat_100_plot_noleg<-ProtectGAP3Cat_100_plot + guides(fill=F)
+legend<-get_legend(ProtectGAP12_ctr_plot+ theme(legend.position="bottom",legend.justification="center",legend.key.width=unit(2,"cm")))
+
+plots_2_2<-plot_grid(ProtectGAP12_ctr_plot_noleg,ProtectGAP12Cat_100_plot_noleg,ProtectGAP3_ctr_plot_noleg,ProtectGAP3Cat_100_plot_noleg, ncol = 2, labels="auto", rel_widths = c(1,.71))
+
+plot_w_legend<-plot_grid(plots_2_2, legend, ncol=1, rel_heights = c(1,.1))
+
+ggsave(plot=plot_w_legend, filename="Protect_panels.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=11, height=9)
 
 
-ggsave(filename="ProtectGAP12Cat_100.png",plot=ProtectGAP12Cat_100_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=5.5, height=5.5)
+# ggsave(filename="ProtectGAP12_ctr.png",plot=ProtectGAP12_ctr_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
+# 
+# ggsave(filename="ProtectGAP3_ctr.png",plot=ProtectGAP3_ctr_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
+# 
+# 
+# ggsave(filename="ProtectGAP3Cat_100.png",plot=ProtectGAP3Cat_100_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
+# 
+# 
+# ggsave(filename="ProtectGAP12Cat_100.png",plot=ProtectGAP12Cat_100_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
 
-ggsave(filename="Unprotected.png",plot=Unprotected_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=5.5, height=5.5)
+ggsave(filename="Unprotected.png",plot=Unprotected_plot+ggtitle(""),device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
 
