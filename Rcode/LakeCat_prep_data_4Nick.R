@@ -116,10 +116,12 @@ PADUS_LakeCat <- subset(PADUS_LakeCat, COMID %in% COMID_1ha_above) #overall tabl
 # Elevation
 PADUS_elevation <- full_join(PADUS_LakeCat, elevation, by='COMID')
 PADUS_elevation <- subset(PADUS_elevation, COMID %in% COMID_1ha_above)
+cor(PADUS_elevation$ElevCat, PADUS_elevation$ElevWs, method='pearson', use='pairwise.complete.obs')
 
 # Topographic wetness index
 PADUS_WetIndex <- full_join(PADUS_LakeCat, WetIndex, by='COMID')
 PADUS_WetIndex <- subset(PADUS_WetIndex, COMID %in% COMID_1ha_above)
+cor(PADUS_WetIndex$WetIndexCat, PADUS_WetIndex$WetIndexWs, method='pearson', use='pairwise.complete.obs')
 
 # Land use/cover: calculate some new "total" variables
 NLCD_2011$PctTotalForest2011Cat <- NLCD_2011$PctConif2011Cat + NLCD_2011$PctDecid2011Cat + NLCD_2011$PctMxFst2011Cat
@@ -130,14 +132,19 @@ NLCD_2011$PctTotalAg2011Ws <- NLCD_2011$PctCrop2011Ws + NLCD_2011$PctHay2011Ws
 NLCD_2011$PctTotalWetland2011Ws <- NLCD_2011$PctWdWet2011Ws + NLCD_2011$PctHbWet2011Ws
 PADUS_NLCD2011 <- full_join(PADUS_LakeCat, NLCD_2011, by='COMID')
 PADUS_NLCD2011 <- subset(PADUS_NLCD2011, COMID %in% COMID_1ha_above)
+cor(PADUS_NLCD2011$PctTotalForest2011Cat, PADUS_NLCD2011$PctTotalForest2011Ws, method='pearson', use='pairwise.complete.obs')
+cor(PADUS_NLCD2011$PctTotalAg2011Cat, PADUS_NLCD2011$PctTotalAg2011Ws, method='pearson', use='pairwise.complete.obs')
+cor(PADUS_NLCD2011$PctTotalWetland2011Cat, PADUS_NLCD2011$PctTotalWetland2011Ws, method='pearson', use='pairwise.complete.obs')
 
 # Road density
 PADUS_RoadDensity <- full_join(PADUS_LakeCat, RoadDensity, by='COMID')
 PADUS_RoadDensity <- subset(PADUS_RoadDensity, COMID %in% COMID_1ha_above)
+cor(PADUS_RoadDensity$RdDensCat, PADUS_RoadDensity$RdDensWs, method='pearson', use='pairwise.complete.obs')
 
 # Impervious surface
 PADUS_Impervious <- full_join(PADUS_LakeCat, Impervious, by='COMID')
 PADUS_Impervious <- subset(PADUS_Impervious, COMID %in% COMID_1ha_above)
+cor(PADUS_Impervious$PctImp2011Cat, PADUS_Impervious$PctImp2011Ws, method='pearson', use='pairwise.complete.obs')
 
 # Mines
 PADUS_Mines <- full_join(PADUS_LakeCat, Mines, by='COMID')
@@ -150,10 +157,12 @@ PADUS_Dams <- subset(PADUS_Dams, COMID %in% COMID_1ha_above)
 # Runoff
 PADUS_runoff <- full_join(PADUS_LakeCat, Runoff, by='COMID')
 PADUS_runoff <- subset(PADUS_runoff, COMID %in% COMID_1ha_above)
+cor(PADUS_runoff$RunoffCat, PADUS_runoff$RunoffWs, method='pearson', use='pairwise.complete.obs')
 
 # Baseflow
 PADUS_baseflow <- full_join(PADUS_LakeCat, Baseflow, by='COMID')
 PADUS_baseflow <- subset(PADUS_baseflow, COMID %in% COMID_1ha_above)
+cor(PADUS_baseflow$BFICat, PADUS_baseflow$BFIWs, method='pearson', use='pairwise.complete.obs')
 
 # Toxic point source pollution
 PADUS_Toxic <- full_join(PADUS_LakeCat, Toxic, by='COMID')
@@ -174,10 +183,13 @@ ForestLoss$TotalPctFrstLossCat <- rowSums(ForestLoss[,7:19])
 ForestLoss$TotalPctFrstLossWs <- rowSums(ForestLoss[,20:32])
 PADUS_ForestLoss <- full_join(PADUS_LakeCat, ForestLoss, by='COMID')
 PADUS_ForestLoss <- subset(PADUS_ForestLoss, COMID %in% COMID_1ha_above)
+cor(PADUS_ForestLoss$TotalPctFrstLossCat, PADUS_ForestLoss$TotalPctFrstLossWs, method='pearson', use='pairwise.complete.obs')
 
 # Climate
 PADUS_PRISM <- full_join(PADUS_LakeCat, PRISM, by='COMID') 
 PADUS_PRISM <- subset(PADUS_PRISM, COMID %in% COMID_1ha_above)
+cor(PADUS_PRISM$Precip8110Cat, PADUS_PRISM$Precip8110Ws, method='pearson', use='pairwise.complete.obs')
+cor(PADUS_PRISM$Tmean8110Cat, PADUS_PRISM$Tmean8110Ws, method='pearson', use='pairwise.complete.obs')
 
 #### create master table of desired variables
 a <- PADUS_NHD[,c('COMID','CatAreaSqKm','PctGAP_Status12Cat','PctGAP_Status3Cat',

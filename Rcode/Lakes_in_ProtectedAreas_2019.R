@@ -1,6 +1,6 @@
 ####################### Characteristics of lakes in US protected areas #########################
 # Date: 2-12-19
-# updated: 3-7-19
+# updated: 4-8-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -125,28 +125,69 @@ png("Figures/protected_lakes_histogram.png", width = 7,height = 5,units = 'in',r
   # PLOT A
   par(mar=c(2,3,4,0.5)) #bot,left,top,right
   hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
-  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Cat, xlab='', main='A) Strict, catchment',breaks=seq(0,100,20),
+  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Cat, xlab='', main='a) Strict, catchment',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000))
   title(ylab='Frequency', line=2.2)
   mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
   # PLOT B
   par(mar=c(2,2,4,1.5)) #bot,left,top,right
-  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Ws, xlab='', main='B) Strict, watershed',breaks=seq(0,100,20),
+  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Ws, xlab='', main='b) Strict, watershed',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), ylab='')
   mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
   # PLOT C
   par(mar=c(3,3,3,0.5)) #bot,left,top,right
-  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Cat, xlab='% protected', main='C) Multi-use, catchment',breaks=seq(0,100,20),
+  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Cat, xlab='% protected', main='c) Multi-use, catchment',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000))
   title(xlab='% protected', line=2)
   title(ylab='Frequency', line=2.2)
   mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
   # PLOT D
   par(mar=c(3,2,3,1.5)) #bot,left,top,right
-  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Ws, xlab='% protected', main='D) Multi-use, watershed',breaks=seq(0,100,20),
+  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Ws, xlab='% protected', main='d) Multi-use, watershed',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), ylab='')
   title(xlab='% protected', line=2)
   mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
+dev.off()
+
+## Catchment and watershed plots separately (2 row, 1 col)
+
+
+png("Figures/protected_lakes_histogram_Cat.png", width = 3.5,height = 5,units = 'in',res=300)
+  par(mfrow=c(2,1))
+  # PLOT A
+  par(mar=c(2,3,4,0.5)) #bot,left,top,right
+  hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Cat, xlab='', main='',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), adj=0)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+
+  # PLOT C
+  par(mar=c(3,3,3,0.5)) #bot,left,top,right
+  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Cat, xlab='% protected', main='',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), adj=0)
+  title(xlab='% protected', line=2)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
+dev.off()
+
+png("Figures/protected_lakes_histogram_Ws.png", width = 3.5,height = 5,units = 'in',res=300)
+  par(mfrow=c(2,1))
+  # PLOT 1
+  par(mar=c(2,3,4,0.5)) #bot,left,top,right
+  hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Ws, xlab='', main='',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), adj=0)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+
+  # PLOT 2
+  par(mar=c(3,3,3,0.5)) #bot,left,top,right
+  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Ws, xlab='% protected', main='',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), adj=0)
+  title(xlab='% protected', line=2)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
 dev.off()
 
 # What proportion of lakes that occur in protected areas has X amount of catchment/watershed protection?
@@ -925,62 +966,70 @@ unprotected_df_conn_countz$prop_protected <- unprotected_df_conn_countz$n_unprot
 unprotected_df_conn_countz$Group <- 'Unprotected'
 
 ## Stacked barplots
-stacked_df <- rbind.data.frame(protected_GAPS12_conn_countz[,c(1,4,5)],protected_GAPS3only_conn_countz[,c(1,4,5)],
-                               unprotected_df_conn_countz[,c(1,4,5)])
+stacked_df <- rbind.data.frame(protected_GAPS12_conn_countz[,c(1,4,5)],protected_GAPS3only_conn_countz[,c(1,4,5)])
+stacked_df$prop_protected <- stacked_df$prop_protected*100 #convert prop to pct
 stacked_df$Group <- as.factor(stacked_df$Group)
+stacked_df$Group <- factor(stacked_df$Group,levels(stacked_df$Group)[c(2,1)])
+stacked_df$LakeConnec <-factor(stacked_df$LakeConnec,levels(stacked_df$LakeConnec)[c(2,4,3,1)])
 
 #png('Figures/stacked_bar_conn_type.png',width = 7.5,height = 4.75,units = 'in',res=300)
 stack_gg1 <- ggplot(stacked_df, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
   geom_bar(stat = "identity") +
   xlab("") +
-  ylab("Proportion of lakes protected") +
+  ylab("Percent of lakes protected") +
   guides(fill = guide_legend(reverse=T)) +
   #theme_bw() +
-  ggtitle('A) Protected lake = lake center in protected area')+
-  scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) +
-  scale_x_discrete(labels=c('Drainage, lake/stream','Drainage, stream','Headwater','Isolated'))+
+  ggtitle('a) Protected lake = lake center in protected area')+
+  scale_y_continuous(limits=c(0,30), breaks=seq(0,30,5)) +
+  scale_x_discrete(labels=c('DRS','IS','HW','DRLS'))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  geom_hline(yintercept=17, linetype='dashed', color='black')+
   theme(axis.title.y = element_text(vjust=2.7))+ #nudge y axis label away from axis a bit
-  scale_fill_manual("legend", values = c("Multi-use center" = "navajowhite2", "Strict center" = "olivedrab3","Unprotected" = "gray70"),
-                    labels=c('Multi-use','Strict','Unprotected'))+
-  #theme(legend.position=c(0.88,0.16))+ #manually reposition legend inside plot
-  theme(legend.position='none')+
+  scale_fill_manual("legend", values = c("Multi-use center" = "navajowhite2", "Strict center" = "olivedrab3"),#,"Unprotected" = "gray70"),
+                    labels=c('Strict','Multi-use'))+
+  theme(legend.position=c(0.12,0.86))+ #manually reposition legend inside plot
+  #theme(legend.position='none')+
   theme(legend.title=element_blank()) #remove legend title
   stack_gg1
 #dev.off()
 
 # Same stacked bar idea, but treating protected lakes as those with fully protected catchments
 # calculate "unprotected" based on all lake catchments that are not 100% protected (strict or multi-use)
-temp_ryan <- unprotected_df_conn_countz[,c(1,4,5)]
-temp_ryan$prop_protected <- 1- (protected_GAPS12_100pct_conn_countz$prop_protected + protected_GAP3only_100pct_conn_countz$prop_protected)
-stacked_df2 <- rbind.data.frame(protected_GAPS12_100pct_conn_countz[,c(1,4,5)],protected_GAP3only_100pct_conn_countz[,c(1,4,5)], temp_ryan)
+#temp_ryan <- unprotected_df_conn_countz[,c(1,4,5)]
+#temp_ryan$prop_protected <- 1- (protected_GAPS12_100pct_conn_countz$prop_protected + protected_GAP3only_100pct_conn_countz$prop_protected)
+stacked_df2 <- rbind.data.frame(protected_GAPS12_100pct_conn_countz[,c(1,4,5)],protected_GAP3only_100pct_conn_countz[,c(1,4,5)])
+stacked_df2$prop_protected <- stacked_df2$prop_protected*100 #convert prop to pct
+stacked_df2$Group <- as.factor(stacked_df2$Group)
+stacked_df2$Group <- factor(stacked_df2$Group,levels(stacked_df2$Group)[c(2,1)])
+stacked_df2$LakeConnec <-factor(stacked_df2$LakeConnec,levels(stacked_df2$LakeConnec)[c(2,4,3,1)])
 
 #png('Figures/stacked_bar_conn_type_cat100.png',width = 7.5,height = 4.75,units = 'in',res=300)
 stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
   geom_bar(stat = "identity") +
   xlab("") +
-  ylab("Proportion of lakes protected") +
+  ylab("Percent of lakes protected") +
   guides(fill = guide_legend(reverse=T)) +
   #theme_bw() +
-  ggtitle('B) Protected lake = 100% catchment protected')+
-  scale_y_continuous(limits=c(0,1), breaks=seq(0,1,0.2)) +
-  scale_x_discrete(labels=c('Drainage, lake/stream','Drainage, stream','Headwater','Isolated'))+
+  ggtitle('b) Protected lake = 100% catchment protected')+
+  scale_y_continuous(limits=c(0,30), breaks=seq(0,30,5)) +
+  scale_x_discrete(labels=c('DRS','IS','HW','DRLS'))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  geom_hline(yintercept=17, linetype='dashed', color='black')+
   theme(axis.title.y = element_text(vjust=2.7))+ #nudge y axis label away from axis a bit
-  scale_fill_manual("legend", values = c("Multi-use cat" = "navajowhite2", "Strict cat" = "olivedrab3","Unprotected" = "gray70"),
-                    labels=c('Multi-use','Strict','Unprotected'))+
-  theme(legend.position=c(0.86,0.21))+ #manually reposition legend inside plot
+  scale_fill_manual("legend", values = c("Multi-use cat" = "navajowhite2", "Strict cat" = "olivedrab3"),#,"Unprotected" = "gray70"),
+                    labels=c('Strict','Multi-use'))+
+  theme(legend.position=c('none'))+ #manually reposition legend inside plot
   theme(legend.text=element_text(size=8))+
   theme(legend.title=element_blank()) #remove legend title
   stack_gg2
 #dev.off()
 
 # multi-panel stacked barplot for different definitions of lake protection
-png('Figures/panel_stacked_bar_conn_type_cat100.png',height = 7.5,width = 6,units = 'in',res=300)
+png('Figures/panel_stacked_bar_conn_type_cat100.png',height = 6,width = 4.5,units = 'in',res=300)
   grid.arrange(stack_gg1, stack_gg2, nrow=2)
 dev.off()
 ######################### who actually looked this far down? ######################################
