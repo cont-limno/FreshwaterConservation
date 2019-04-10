@@ -1,6 +1,6 @@
 ####################### Lake protection by US state and NARS ecoregion #########################
 # Date: 12-5-18
-# updated: 3-21-19
+# updated: 4-10-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -159,7 +159,7 @@ melted_Cat_Cat100 <- melt(barplot_df_Cat100, id.vars='State')
 melted_Cat_Cat100 <- merge(melted_Cat_Cat100, LakeProtection_byState[,1:2], by='State') # add in number of lakes column to melted df for plot
 
 # with help from: https://stackoverflow.com/questions/20349929/stacked-bar-plot-in-r
-state_ctr_plot <- ggplot(melted_Cat_ctr, aes(x = reorder(State, -nLakes), y = value, fill = variable)) + 
+state_ctr_plot <- ggplot(melted_Cat_ctr, aes(x = reorder(State, nLakes), y = value, fill = variable)) + 
   geom_bar(stat = "identity") +
   xlab("") +
   ylab("Percent of lakes protected") +
@@ -169,14 +169,15 @@ state_ctr_plot <- ggplot(melted_Cat_ctr, aes(x = reorder(State, -nLakes), y = va
   scale_y_continuous(limits=c(0,70), breaks=seq(0,70,10)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
   scale_fill_manual("legend", values = c("PropProtected_gap12_ctr" = "olivedrab3", "PropProtected_gap3_ctr" = "navajowhite2"),
                     labels=c('Strict','Multi-use'))+
   geom_hline(yintercept=17, linetype='dashed', color='black')+
-  theme(legend.position=c(0.07,0.85))+ #manually reposition legend inside plot
+  theme(legend.position=c(0.89,0.9))+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
 
-state_Cat100_plot <- ggplot(melted_Cat_Cat100, aes(x = reorder(State, -nLakes), y = value, fill = variable)) + 
+state_Cat100_plot <- ggplot(melted_Cat_Cat100, aes(x = reorder(State, nLakes), y = value, fill = variable)) + 
   geom_bar(stat = "identity") +
   xlab("") +
   ylab("Percent of lakes protected") +
@@ -186,11 +187,12 @@ state_Cat100_plot <- ggplot(melted_Cat_Cat100, aes(x = reorder(State, -nLakes), 
   scale_y_continuous(limits=c(0,70), breaks=seq(0,70,10)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
   scale_fill_manual("legend", values = c("PropProtected_gap12_Cat100" = "olivedrab3", "PropProtected_gap3_Cat100" = "navajowhite2"),
                     labels=c('Strict','Multi-use'))+
   geom_hline(yintercept=17, linetype='dashed', color='black')+
-  theme(legend.position=c(0.07,0.85))+ #manually reposition legend inside plot
+  theme(legend.position=c("none"))+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
 
 #png('Figures/LakeProtectionByState.png',width = 7.5,height = 6,units = 'in',res=300)
@@ -203,14 +205,16 @@ barplot_df_ctr_NARS$PropProtected_gap12_ctr <- barplot_df_ctr_NARS$PropProtected
 barplot_df_ctr_NARS$PropProtected_gap3_ctr <- barplot_df_ctr_NARS$PropProtected_gap3_ctr*100
 melted_Cat_ctr_NARS <- melt(barplot_df_ctr_NARS, id.vars='Ecoregion')
 melted_Cat_ctr_NARS <- merge(melted_Cat_ctr_NARS, LakeProtection_byNARS[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
+melted_Cat_ctr_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1)
 
 barplot_df_Cat100_NARS <- LakeProtection_byNARS[,c(1,10:11)]
 barplot_df_Cat100_NARS$PropProtected_gap12_Cat100 <- barplot_df_Cat100_NARS$PropProtected_gap12_Cat100*100 #convert prop to pct
 barplot_df_Cat100_NARS$PropProtected_gap3_Cat100 <- barplot_df_Cat100_NARS$PropProtected_gap3_Cat100*100
 melted_Cat_Cat100_NARS <- melt(barplot_df_Cat100_NARS, id.vars='Ecoregion')
 melted_Cat_Cat100_NARS <- merge(melted_Cat_Cat100_NARS, LakeProtection_byNARS[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
-  
-ecoregion_ctr_plot <- ggplot(melted_Cat_ctr_NARS, aes(x = reorder(Ecoregion, -nLakes), y = value, fill = variable)) + 
+melted_Cat_Cat100_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1) 
+
+ecoregion_ctr_plot <- ggplot(melted_Cat_ctr_NARS, aes(x = reorder(Ecoregion, PlotOrder), y = value, fill = variable)) + 
   geom_bar(stat = "identity") +
   xlab("") +
   ylab("Percent of lakes protected") +
@@ -220,14 +224,15 @@ ecoregion_ctr_plot <- ggplot(melted_Cat_ctr_NARS, aes(x = reorder(Ecoregion, -nL
   scale_y_continuous(limits=c(0,70), breaks=seq(0,70,10)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
   scale_fill_manual("legend", values = c("PropProtected_gap12_ctr" = "olivedrab3", "PropProtected_gap3_ctr" = "navajowhite2"),
                     labels=c('Strict','Multi-use'))+
   geom_hline(yintercept=17, linetype='dashed', color='black')+
-  theme(legend.position=c(0.12,0.9))+ #manually reposition legend inside plot
+  theme(legend.position=c(0.89,0.9))+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
 
-ecoregion_Cat100_plot <- ggplot(melted_Cat_Cat100_NARS, aes(x = reorder(Ecoregion, -nLakes), y = value, fill = variable)) + 
+ecoregion_Cat100_plot <- ggplot(melted_Cat_Cat100_NARS, aes(x = reorder(Ecoregion, PlotOrder), y = value, fill = variable)) + 
   geom_bar(stat = "identity") +
   xlab("") +
   ylab("Percent of lakes protected") +
@@ -237,7 +242,8 @@ ecoregion_Cat100_plot <- ggplot(melted_Cat_Cat100_NARS, aes(x = reorder(Ecoregio
   scale_y_continuous(limits=c(0,70), breaks=seq(0,70,10)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
   scale_fill_manual("legend", values = c("PropProtected_gap12_Cat100" = "olivedrab3", "PropProtected_gap3_Cat100" = "navajowhite2"),
                     labels=c('Strict','Multi-use'))+
   geom_hline(yintercept=17, linetype='dashed', color='black')+
