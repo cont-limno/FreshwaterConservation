@@ -120,7 +120,7 @@ nrow(unprotected_df)/total_n_lakes
 # writeOGR(PADUS_unprotected_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
 
 ### Basic plots: do lakes in protected areas have protected catchments and watersheds?
-png("Figures/protected_lakes_histogram.png", width = 7,height = 5,units = 'in',res=300)
+png("Figures/protected_lakes_histogram.png", width = 7,height = 5,units = 'in',res=600)
   par(mfrow=c(2,2))
   # PLOT A
   par(mar=c(2,3,4,0.5)) #bot,left,top,right
@@ -152,7 +152,7 @@ dev.off()
 ## Catchment and watershed plots separately (2 row, 1 col)
 
 
-png("Figures/protected_lakes_histogram_Cat.png", width = 3.5,height = 5,units = 'in',res=300)
+png("Figures/protected_lakes_histogram_Cat.png", width = 3.5,height = 5,units = 'in',res=600)
   par(mfrow=c(2,1))
   # PLOT A
   par(mar=c(2,3,4,0.5)) #bot,left,top,right
@@ -171,7 +171,7 @@ png("Figures/protected_lakes_histogram_Cat.png", width = 3.5,height = 5,units = 
   #mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
 dev.off()
 
-png("Figures/protected_lakes_histogram_Ws.png", width = 3.5,height = 5,units = 'in',res=300)
+png("Figures/protected_lakes_histogram_Ws.png", width = 3.5,height = 5,units = 'in',res=600)
   par(mfrow=c(2,1))
   # PLOT 1
   par(mar=c(2,3,4,0.5)) #bot,left,top,right
@@ -225,7 +225,7 @@ v2 <- violin_df$PctGAP_Status3Cat
 v3 <- violin_df$PctGAP_Status12Ws
 v4 <- violin_df$PctGAP_Status3Ws
 
-png("Figures/violin_pct_protected.png", width = 7,height = 5,units = 'in',res=300)
+png("Figures/violin_pct_protected.png", width = 7,height = 5,units = 'in',res=600)
   par(mfrow=c(1,1))
   par(las=1,bty="l")  ## my preferred setting
   par(mar=c(3,4,2,0.5)) #bot,left,top,right
@@ -970,7 +970,7 @@ stacked_df <- rbind.data.frame(protected_GAPS12_conn_countz[,c(1,4,5)],protected
 stacked_df$prop_protected <- stacked_df$prop_protected*100 #convert prop to pct
 stacked_df$Group <- as.factor(stacked_df$Group)
 stacked_df$Group <- factor(stacked_df$Group,levels(stacked_df$Group)[c(2,1)])
-stacked_df$LakeConnec <-factor(stacked_df$LakeConnec,levels(stacked_df$LakeConnec)[c(2,4,3,1)])
+stacked_df$LakeConnec <-factor(stacked_df$LakeConnec,levels(stacked_df$LakeConnec)[c(1,3,4,2)])
 
 #png('Figures/stacked_bar_conn_type.png',width = 7.5,height = 4.75,units = 'in',res=300)
 stack_gg1 <- ggplot(stacked_df, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
@@ -981,15 +981,16 @@ stack_gg1 <- ggplot(stacked_df, aes(x = LakeConnec, y = prop_protected, fill = G
   #theme_bw() +
   ggtitle('a) Protected lake = lake center in protected area')+
   scale_y_continuous(limits=c(0,30), breaks=seq(0,30,5)) +
-  scale_x_discrete(labels=c('DRS','IS','HW','DRLS'))+
+  scale_x_discrete(labels=c('DRLS','HW','IS','DRS'))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
   geom_hline(yintercept=17, linetype='dashed', color='black')+
-  theme(axis.title.y = element_text(vjust=2.7))+ #nudge y axis label away from axis a bit
+  theme(axis.title.y = element_text(vjust=2.7, color='black'))+ #nudge y axis label away from axis a bit
   scale_fill_manual("legend", values = c("Multi-use center" = "navajowhite2", "Strict center" = "olivedrab3"),#,"Unprotected" = "gray70"),
                     labels=c('Strict','Multi-use'))+
-  theme(legend.position=c(0.12,0.86))+ #manually reposition legend inside plot
+  theme(legend.position=c(0.90,0.86))+ #manually reposition legend inside plot
+  theme(axis.text.y = element_text(color='black'), axis.text.x=element_text(color='black'))+
   #theme(legend.position='none')+
   theme(legend.title=element_blank()) #remove legend title
   stack_gg1
@@ -1003,7 +1004,7 @@ stacked_df2 <- rbind.data.frame(protected_GAPS12_100pct_conn_countz[,c(1,4,5)],p
 stacked_df2$prop_protected <- stacked_df2$prop_protected*100 #convert prop to pct
 stacked_df2$Group <- as.factor(stacked_df2$Group)
 stacked_df2$Group <- factor(stacked_df2$Group,levels(stacked_df2$Group)[c(2,1)])
-stacked_df2$LakeConnec <-factor(stacked_df2$LakeConnec,levels(stacked_df2$LakeConnec)[c(2,4,3,1)])
+stacked_df2$LakeConnec <-factor(stacked_df2$LakeConnec,levels(stacked_df2$LakeConnec)[c(1,3,4,2)])
 
 #png('Figures/stacked_bar_conn_type_cat100.png',width = 7.5,height = 4.75,units = 'in',res=300)
 stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
@@ -1014,16 +1015,17 @@ stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = 
   #theme_bw() +
   ggtitle('b) Protected lake = 100% catchment protected')+
   scale_y_continuous(limits=c(0,30), breaks=seq(0,30,5)) +
-  scale_x_discrete(labels=c('DRS','IS','HW','DRLS'))+
+  scale_x_discrete(labels=c('DRLS','HW','IS','DRS'))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
   geom_hline(yintercept=17, linetype='dashed', color='black')+
-  theme(axis.title.y = element_text(vjust=2.7))+ #nudge y axis label away from axis a bit
+  theme(axis.title.y = element_text(vjust=2.7, color='black'))+ #nudge y axis label away from axis a bit
   scale_fill_manual("legend", values = c("Multi-use cat" = "navajowhite2", "Strict cat" = "olivedrab3"),#,"Unprotected" = "gray70"),
                     labels=c('Strict','Multi-use'))+
   theme(legend.position=c('none'))+ #manually reposition legend inside plot
   theme(legend.text=element_text(size=8))+
+  theme(axis.text.y = element_text(color='black'), axis.text.x=element_text(color='black'))+
   theme(legend.title=element_blank()) #remove legend title
   stack_gg2
 #dev.off()

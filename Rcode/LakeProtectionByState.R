@@ -195,9 +195,9 @@ state_Cat100_plot <- ggplot(melted_Cat_Cat100, aes(x = reorder(State, nLakes), y
   theme(legend.position=c("none"))+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
 
-#png('Figures/LakeProtectionByState.png',width = 7.5,height = 6,units = 'in',res=300)
+png('Figures/LakeProtectionByState.png',width = 7.5,height = 6,units = 'in',res=600)
   grid.arrange(state_ctr_plot, state_Cat100_plot, nrow=2)
-#dev.off()
+dev.off()
 
 ## Barplots of lake protection by ecoregion
 barplot_df_ctr_NARS <- LakeProtection_byNARS[,c(1,8:9)]
@@ -250,6 +250,6 @@ ecoregion_Cat100_plot <- ggplot(melted_Cat_Cat100_NARS, aes(x = reorder(Ecoregio
   theme(legend.position="none")+ #manually reposition legend inside plot
   theme(legend.title=element_blank()) #remove legend title
 
-#png('Figures/LakeProtectionByNARS.png',width = 4.5,height = 6,units = 'in',res=300)
+png('Figures/LakeProtectionByNARS.png',width = 4.5,height = 6,units = 'in',res=600)
   grid.arrange(ecoregion_ctr_plot, ecoregion_Cat100_plot, nrow=2)
-#dev.off()
+dev.off()
