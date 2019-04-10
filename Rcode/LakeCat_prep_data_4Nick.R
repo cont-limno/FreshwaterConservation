@@ -192,9 +192,12 @@ cor(PADUS_PRISM$Precip8110Cat, PADUS_PRISM$Precip8110Ws, method='pearson', use='
 cor(PADUS_PRISM$Tmean8110Cat, PADUS_PRISM$Tmean8110Ws, method='pearson', use='pairwise.complete.obs')
 
 #### create master table of desired variables
-a <- PADUS_NHD[,c('COMID','CatAreaSqKm','PctGAP_Status12Cat','PctGAP_Status3Cat',
+# Calculate drainage area proxy
+PADUS_NHD$DrainageRatio <- PADUS_NHD$AREASQKM/PADUS_NHD$WsAreaSqKm
+
+a <- PADUS_NHD[,c('COMID','PctGAP_Status12Cat','PctGAP_Status3Cat',
                   'ProtectGAP12_ctr','ProtectGAP3_ctr',
-                  'ProtectGAP12Cat_100','ProtectGAP3Cat_100','Unprotected','AREASQKM')]
+                  'ProtectGAP12Cat_100','ProtectGAP3Cat_100','Unprotected','AREASQKM','CatAreaSqKm','DrainageRatio')]
 b <- PADUS_elevation[,c('COMID','ElevCat')]
 c <- PADUS_WetIndex[,c('COMID','WetIndexCat')]
 d <- PADUS_NLCD2011[,c('COMID','PctTotalForest2011Cat','PctTotalAg2011Cat','PctTotalWetland2011Cat','PctConif2011Cat')]
@@ -211,7 +214,7 @@ n <- PADUS_ForestLoss[,c('COMID','TotalPctFrstLossCat')]
 o <- PADUS_PRISM[,c('COMID','Precip8110Cat','Tmean8110Cat')]
 p <- state_NARS_COMIDs[,c('COMID','WSA9','WSA9_NAME','STUSPS')]
 #xx <- Reduce(function(...) merge(..., all=T), list(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o))
-cat_table <- Reduce(function(...) merge(..., all=T), list(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p))
+cat_table <- Reduce(function(...) merge(..., all=T), list(a,b,c,d,e,f,i,j,l,n,o,p))
 cat_table <- cat_table[!duplicated(cat_table$COMID),] #remove duplicate COMIDs
 #cat_table <- xx[,c(1,4,5,8,9,10,11,12,13,2,20:22,24,26:29,34,36,38,40,42,44,46:48,52,54,56,58,59)]
 #Ws_table <- xx[,c(1,6,7,14:19,3,20,21,23,25,30:33,35,37,39,41,43,45,49:51,53,55,57,60,61)]
