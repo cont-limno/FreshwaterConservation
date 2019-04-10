@@ -1,2 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<metadata xml:lang="en"><Esri><CreaDate>20181210</CreaDate><CreaTime>16255300</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><DataProperties><lineage><Process ToolSource="c:\program files (x86)\arcgis\desktop10.3\ArcToolbox\Toolboxes\Spatial Analyst Tools.tbx\TabulateArea" Date="20181210" Time="162159">TabulateArea lower48 STUSPS PADUS_Gaps123_raster.tif GAP_Sts C:\Ian_GIS\FreshwaterConservation\FreshwaterConservation.gdb\PADUS_USSTATE_TabArea 30</Process></lineage></DataProperties></Esri></metadata>
