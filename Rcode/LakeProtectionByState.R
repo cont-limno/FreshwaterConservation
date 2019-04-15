@@ -142,10 +142,17 @@ LakeProtection_byState_Export_perm$Strict_Cat100 <- paste0(LakeProtection_byStat
 LakeProtection_byState_Export_perm$Multi_Cat100 <- paste0(LakeProtection_byState_perm$ProtectedLakes_gap3_Cat100, ' (', round(LakeProtection_byState_perm$PropProtected_gap3_Cat100,2),')')
 LakeProtection_byState_Export_perm$Unprotected <- paste0(LakeProtection_byState_perm$unprotected_lakes, ' (', round(LakeProtection_byState_perm$PropUnprotected,2),')')
 
+# differences in number of lakes in permanent vs. full datasets
+ecoregions_lake_n <- cbind.data.frame(LakeProtection_byNARS[,1:2], LakeProtection_byNARS_perm[,2])
+colnames(ecoregions_lake_n) <- c('Ecoregion','nLakes_all','nLakes_perm')
+ecoregions_lake_n$diff <- ecoregions_lake_n$nLakes_all-ecoregions_lake_n$nLakes_perm
+ecoregions_lake_n$pct_dff <- (ecoregions_lake_n$nLakes_all-ecoregions_lake_n$nLakes_perm)/ecoregions_lake_n$nLakes_all
+
 # export table and reformat in Excel
 #write.csv(LakeProtection_byState_Export, file='Data/LakeProtection_byState.csv')
 #write.csv(LakeProtection_byState_Export_perm, file='Data/LakeProtection_byState_perm.csv')
 #write.csv(LakeProtection_byNARS, file='Data/LakeProtection_byNARS.csv')
+#write.csv(LakeProtection_byNARS_perm, file='Data/LakeProtection_byNARS_perm.csv')
 
 ### USES INTERMEDIATE DATA FROM FUNCTIONS: data only exist if run functions line by line
 #state_NARS_COMID <- merge(NARS_COMID[,c(2:4)], lower48_COMID[,c(6,11)], by='COMID',all=F)
@@ -227,13 +234,26 @@ barplot_df_ctr$PropProtected_gap3_ctr <- barplot_df_ctr$PropProtected_gap3_ctr*1
 melted_Cat_ctr <- melt(barplot_df_ctr, id.vars='State')
 melted_Cat_ctr <- merge(melted_Cat_ctr, LakeProtection_byState[,1:2], by='State') # add in number of lakes column to melted df for plot
 
+barplot_df_ctr_perm <- LakeProtection_byState_perm[,c(1,8:9)]
+barplot_df_ctr_perm$PropProtected_gap12_ctr <- barplot_df_ctr_perm$PropProtected_gap12_ctr*100 #convert prop to pct
+barplot_df_ctr_perm$PropProtected_gap3_ctr <- barplot_df_ctr_perm$PropProtected_gap3_ctr*100
+melted_Cat_ctr_perm <- melt(barplot_df_ctr_perm, id.vars='State')
+melted_Cat_ctr_perm <- merge(melted_Cat_ctr_perm, LakeProtection_byState_perm[,1:2], by='State') # add in number of lakes column to melted df for plot
+
 barplot_df_Cat100 <- LakeProtection_byState[,c(1,10:11)]
 barplot_df_Cat100$PropProtected_gap12_Cat100 <- barplot_df_Cat100$PropProtected_gap12_Cat100*100 #convert prop to pct
 barplot_df_Cat100$PropProtected_gap3_Cat100 <- barplot_df_Cat100$PropProtected_gap3_Cat100*100
 melted_Cat_Cat100 <- melt(barplot_df_Cat100, id.vars='State')
 melted_Cat_Cat100 <- merge(melted_Cat_Cat100, LakeProtection_byState[,1:2], by='State') # add in number of lakes column to melted df for plot
 
+barplot_df_Cat100_perm <- LakeProtection_byState_perm[,c(1,10:11)]
+barplot_df_Cat100_perm$PropProtected_gap12_Cat100 <- barplot_df_Cat100_perm$PropProtected_gap12_Cat100*100 #convert prop to pct
+barplot_df_Cat100_perm$PropProtected_gap3_Cat100 <- barplot_df_Cat100_perm$PropProtected_gap3_Cat100*100
+melted_Cat_Cat100_perm <- melt(barplot_df_Cat100_perm, id.vars='State')
+melted_Cat_Cat100_perm <- merge(melted_Cat_Cat100_perm, LakeProtection_byState_perm[,1:2], by='State') # add in number of l
+
 # with help from: https://stackoverflow.com/questions/20349929/stacked-bar-plot-in-r
+# all lakes
 state_ctr_plot <- ggplot(melted_Cat_ctr, aes(x = reorder(State, nLakes), y = value, fill = variable)) + 
   geom_bar(stat = "identity") +
   xlab("") +
@@ -274,6 +294,48 @@ png('Figures/LakeProtectionByState.png',width = 7.5,height = 6,units = 'in',res=
   grid.arrange(state_ctr_plot, state_Cat100_plot, nrow=2)
 dev.off()
 
+# permanent lakes only
+state_ctr_plot_perm <- ggplot(melted_Cat_ctr_perm, aes(x = reorder(State, nLakes), y = value, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Percent of lakes protected") +
+  ggtitle('a) Protected lake = lake center in protected area')+
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  scale_y_continuous(limits=c(0,70), breaks=seq(0,70,10)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
+  scale_fill_manual("legend", values = c("PropProtected_gap12_ctr" = "olivedrab3", "PropProtected_gap3_ctr" = "navajowhite2"),
+                    labels=c('Strict','Multi-use'))+
+  geom_hline(yintercept=17, linetype='dashed', color='black')+
+  theme(legend.position=c(0.89,0.9))+ #manually reposition legend inside plot
+  theme(legend.title=element_blank()) #remove legend title
+
+state_Cat100_plot_perm <- ggplot(melted_Cat_Cat100_perm, aes(x = reorder(State, nLakes), y = value, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Percent of lakes protected") +
+  ggtitle('b) Protected lake = 100% catchment protected')+
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  scale_y_continuous(limits=c(0,70), breaks=seq(0,70,10)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
+  scale_fill_manual("legend", values = c("PropProtected_gap12_Cat100" = "olivedrab3", "PropProtected_gap3_Cat100" = "navajowhite2"),
+                    labels=c('Strict','Multi-use'))+
+  geom_hline(yintercept=17, linetype='dashed', color='black')+
+  theme(legend.position=c("none"))+ #manually reposition legend inside plot
+  theme(legend.title=element_blank()) #remove legend title
+
+png('Figures/LakeProtectionByState_perm.png',width = 7.5,height = 6,units = 'in',res=600)
+  grid.arrange(state_ctr_plot_perm, state_Cat100_plot_perm, nrow=2)
+dev.off()
+
+
 ## Barplots of lake protection by ecoregion
 barplot_df_ctr_NARS <- LakeProtection_byNARS[,c(1,8:9)]
 barplot_df_ctr_NARS$PropProtected_gap12_ctr <- barplot_df_ctr_NARS$PropProtected_gap12_ctr*100 #convert prop to pct
@@ -282,6 +344,13 @@ melted_Cat_ctr_NARS <- melt(barplot_df_ctr_NARS, id.vars='Ecoregion')
 melted_Cat_ctr_NARS <- merge(melted_Cat_ctr_NARS, LakeProtection_byNARS[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
 melted_Cat_ctr_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1)
 
+barplot_df_ctr_NARS_perm <- LakeProtection_byNARS_perm[,c(1,8:9)]
+barplot_df_ctr_NARS_perm$PropProtected_gap12_ctr <- barplot_df_ctr_NARS_perm$PropProtected_gap12_ctr*100 #convert prop to pct
+barplot_df_ctr_NARS_perm$PropProtected_gap3_ctr <- barplot_df_ctr_NARS_perm$PropProtected_gap3_ctr*100
+melted_Cat_ctr_NARS_perm <- melt(barplot_df_ctr_NARS_perm, id.vars='Ecoregion')
+melted_Cat_ctr_NARS_perm <- merge(melted_Cat_ctr_NARS_perm, LakeProtection_byNARS_perm[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
+melted_Cat_ctr_NARS_perm$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1)
+
 barplot_df_Cat100_NARS <- LakeProtection_byNARS[,c(1,10:11)]
 barplot_df_Cat100_NARS$PropProtected_gap12_Cat100 <- barplot_df_Cat100_NARS$PropProtected_gap12_Cat100*100 #convert prop to pct
 barplot_df_Cat100_NARS$PropProtected_gap3_Cat100 <- barplot_df_Cat100_NARS$PropProtected_gap3_Cat100*100
@@ -289,6 +358,14 @@ melted_Cat_Cat100_NARS <- melt(barplot_df_Cat100_NARS, id.vars='Ecoregion')
 melted_Cat_Cat100_NARS <- merge(melted_Cat_Cat100_NARS, LakeProtection_byNARS[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
 melted_Cat_Cat100_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1) 
 
+barplot_df_Cat100_NARS_perm <- LakeProtection_byNARS_perm[,c(1,10:11)]
+barplot_df_Cat100_NARS_perm$PropProtected_gap12_Cat100 <- barplot_df_Cat100_NARS_perm$PropProtected_gap12_Cat100*100 #convert prop to pct
+barplot_df_Cat100_NARS_perm$PropProtected_gap3_Cat100 <- barplot_df_Cat100_NARS_perm$PropProtected_gap3_Cat100*100
+melted_Cat_Cat100_NARS_perm <- melt(barplot_df_Cat100_NARS_perm, id.vars='Ecoregion')
+melted_Cat_Cat100_NARS_perm <- merge(melted_Cat_Cat100_NARS_perm, LakeProtection_byNARS_perm[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
+melted_Cat_Cat100_NARS_perm$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1) 
+
+# all lakes
 ecoregion_ctr_plot <- ggplot(melted_Cat_ctr_NARS, aes(x = reorder(Ecoregion, PlotOrder), y = value, fill = variable)) + 
   geom_bar(stat = "identity") +
   xlab("") +
@@ -327,4 +404,45 @@ ecoregion_Cat100_plot <- ggplot(melted_Cat_Cat100_NARS, aes(x = reorder(Ecoregio
 
 png('Figures/LakeProtectionByNARS.png',width = 4.5,height = 6,units = 'in',res=600)
   grid.arrange(ecoregion_ctr_plot, ecoregion_Cat100_plot, nrow=2)
+dev.off()
+
+# permanent lakes only
+ecoregion_ctr_plot_perm <- ggplot(melted_Cat_ctr_NARS_perm, aes(x = reorder(Ecoregion, PlotOrder), y = value, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Percent of lakes protected") +
+  ggtitle('a) Protected lake = lake center in protected area')+
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  scale_y_continuous(limits=c(0,80), breaks=seq(0,80,10)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
+  scale_fill_manual("legend", values = c("PropProtected_gap12_ctr" = "olivedrab3", "PropProtected_gap3_ctr" = "navajowhite2"),
+                    labels=c('Strict','Multi-use'))+
+  geom_hline(yintercept=17, linetype='dashed', color='black')+
+  theme(legend.position=c(0.89,0.9))+ #manually reposition legend inside plot
+  theme(legend.title=element_blank()) #remove legend title
+
+ecoregion_Cat100_plot_perm <- ggplot(melted_Cat_Cat100_NARS_perm, aes(x = reorder(Ecoregion, PlotOrder), y = value, fill = variable)) + 
+  geom_bar(stat = "identity") +
+  xlab("") +
+  ylab("Percent of lakes protected") +
+  ggtitle('b) Protected lake = 100% catchment protected')+
+  guides(fill = guide_legend(reverse=T)) +
+  #theme_bw() +
+  scale_y_continuous(limits=c(0,80), breaks=seq(0,80,10)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+  theme(axis.text.x=element_text(angle=50, hjust=1, color='black'))+ #tilt axis labels
+  theme(axis.text.y=element_text(color='black'))+
+  scale_fill_manual("legend", values = c("PropProtected_gap12_Cat100" = "olivedrab3", "PropProtected_gap3_Cat100" = "navajowhite2"),
+                    labels=c('Strict','Multi-use'))+
+  geom_hline(yintercept=17, linetype='dashed', color='black')+
+  theme(legend.position="none")+ #manually reposition legend inside plot
+  theme(legend.title=element_blank()) #remove legend title
+
+png('Figures/LakeProtectionByNARS_perm.png',width = 4.5,height = 6,units = 'in',res=600)
+  grid.arrange(ecoregion_ctr_plot_perm, ecoregion_Cat100_plot_perm, nrow=2)
 dev.off()
