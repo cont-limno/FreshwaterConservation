@@ -1,6 +1,6 @@
 ####################### Characteristics of lakes in US protected areas #########################
 # Date: 2-12-19
-# updated: 4-8-19
+# updated: 4-15-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -16,16 +16,62 @@ library(ggplot2)
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
 
+LAGOS_FCODES <- c(39000,39004,39009,39010,39011,39012,43600,43613,43615,43617,43618,43619,43621)
+#39000: lake/pond, no attributes
+#39004: lake/pond, perennial
+#39009: lake/pond, perennial, average water elevation
+#39010: lake/pond, perennial, normal pool
+#39011: lake/pond, perennial, date of photo
+#39012: lake/pond, perennial, spillway elevation
+#43600: reservoir
+#43613: reservoir, construction material, perennial
+#43615: reservoir, construction material, perennial
+#43617: reservoir, water storage
+#43618: reservoir, constuction material
+#43619: reservoir, constuction material
+#43621: reservoir, water storage, perennial
+
+### Others in NHD with FTYPE as LakePond or Reservoir
+# 43624: reservoir, treatment
+# 43601: reservoir, aquaculture
+# 43606: reservoir, disposal
+# 39001: lake/pond, intermittent ### KEEP?
+# 39005: lake/pond, intermittent, high water elevation ### KEEP?
+# 39006: lake/pond, intermittent, date of photo ### KEEP?
+# 43607: reservoir, evaporator
+# 43609: reservoir, treatment, cooling pond
+# 43605: reservoir, disposal tailings 
+intermittent_FCODES <- c(39001,39005,39006)
+all_FCODES <- c(LAGOS_FCODES, intermittent_FCODES)
+
+lake_sqkm_cutoff <- 0.01 #=1ha
+
 # lower 48 states
 lower48 <- shapefile("Data/lower48/lower48.shp") #same crs as NHD_pts
 
 ## Protected lakes (centroids)
 protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/Arcgis/NHD_pts_GAPS12_ArcGIS_select.shp")
+protected_GAPS12  <- subset(protected_GAPS12 , FTYPE=='LakePond' | FTYPE=='Reservoir')
+protected_GAPS12 <- subset(protected_GAPS12, AREASQKM >= lake_sqkm_cutoff)
+protected_GAPS12 <- protected_GAPS12 [!duplicated(protected_GAPS12 @data$COMID),] #remove duplicate COMID
+protected_GAPS12 <- subset(protected_GAPS12, FCODE %in% all_FCODES)
+
 protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/Arcgis/NHD_pts_GAP3_only_ArcGIS_select.shp")
+protected_GAP3only <- subset(protected_GAP3only, FTYPE=='LakePond' | FTYPE=='Reservoir')
+protected_GAP3only <- subset(protected_GAP3only, AREASQKM >= lake_sqkm_cutoff)
+protected_GAP3only <- protected_GAP3only[!duplicated(protected_GAP3only@data$COMID),] #remove duplicate COMID
+protected_GAP3only <- subset(protected_GAP3only, FCODE %in% all_FCODES)
 
 ## Other lakes
 # NHD waterbodies (converted to points in ArcGIS) (NHDPlusV2 National dataset; downloaded November 2018)
-NHD_pts <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_waterbody_pts_LakePondReservoir.shp")
+NHD_pts <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_waterbody_pts.shp")
+NHD_pts <- subset(NHD_pts, FTYPE=='LakePond' | FTYPE=='Reservoir')
+NHD_pts <- subset(NHD_pts, AREASQKM >= lake_sqkm_cutoff)
+NHD_pts <- NHD_pts[!duplicated(NHD_pts@data$COMID),] #remove duplicate COMID
+NHD_pts <- subset(NHD_pts, FCODE %in% all_FCODES)
+
+NHD_pts_inter <- subset(NHD_pts, FCODE %in% intermittent_FCODES)
+NHD_pts_perm <- subset(NHD_pts, FCODE %in% LAGOS_FCODES)
 
 #### LakeCat data for analyzing lake characteristics (protected and unprotected) ####
 # Protected land by GAP status by local catchments and network watersheds (LakeCat)
@@ -53,9 +99,6 @@ Baseflow <- read.csv("C:/Ian_GIS/LakeCat/BFI.csv")
 # LAGOS conn class data
 LAGOSconn <- read.csv("Data/LakeConn_1ha_LAGOS_NHD_Xwalk.csv")
 
-#### D-fine constants ####
-lake_sqkm_cutoff <- 0.01 #=1ha
-
 ############################## Main program ######################################
 ## calculate total % GAP status 1-2 and 1-3 for catchments and watersheds
 PADUS_LakeCat$PctGAP_Status12Cat <- PADUS_LakeCat$PctGAP_Status1Cat + PADUS_LakeCat$PctGAP_Status2Cat
@@ -66,54 +109,49 @@ PADUS_LakeCat$PctGAP_Status123Ws <- PADUS_LakeCat$PctGAP_Status1Ws + PADUS_LakeC
 
 # get rid of unwanted columns
 PADUS_LakeCat <- PADUS_LakeCat[,c('COMID','PctGAP_Status12Cat','PctGAP_Status12Ws','PctGAP_Status123Cat','PctGAP_Status123Ws','PctGAP_Status3Cat','PctGAP_Status3Ws')]
+#PADUS_LakeCat <- merge(NHD_pts@data[,c('COMID','FCODE','FTYPE','ELEVATION','AREASQKM')], PADUS_LakeCat, by='COMID')
 
 # how correlated is catchment protection with watershed protection?
 cor(PADUS_LakeCat$PctGAP_Status12Cat, PADUS_LakeCat$PctGAP_Status12Ws, method='pearson', use='pairwise.complete.obs')
 cor(PADUS_LakeCat$PctGAP_Status3Cat, PADUS_LakeCat$PctGAP_Status3Ws, method='pearson', use='pairwise.complete.obs')
 
-## Basic subsetting and joining PADUS data to lakes
-# Strictly protected lakes
-protected_GAPS12_df <- subset(protected_GAPS12@data, AREASQKM >= lake_sqkm_cutoff) #remove too small lakes
-protected_GAPS12_df <- protected_GAPS12_df[!duplicated(protected_GAPS12_df$COMID),] #remove duplicate COMIDs
-protected_GAPS12_df_PADUS <- merge(protected_GAPS12_df, PADUS_LakeCat, by='COMID', all.y=F) #join to PADUS table
-
-# Multi-use protected lakes
-protected_GAP3only_df <- subset(protected_GAP3only@data, AREASQKM >= lake_sqkm_cutoff) #remove too small lakes
-protected_GAP3only_df <- protected_GAP3only_df[!duplicated(protected_GAP3only_df$COMID),] #remove duplicate COMIDs
-protected_GAP3only_df_PADUS <- merge(protected_GAP3only_df, PADUS_LakeCat, by='COMID', all.y=F) #join to PADUS table
+# Subset into strict protection and multi-use by and permanent/intermittent hydrology
+protected_GAPS12 <- merge(protected_GAPS12, PADUS_LakeCat, by='COMID')
+protected_GAPS12_perm <- subset(protected_GAPS12, FCODE %in% LAGOS_FCODES)
+protected_GAPS12_inter <- subset(protected_GAPS12, FCODE %in% intermittent_FCODES)
 
 # get rid of lakes counted as both strict and multi (treat as strict); issues with overlapping polygons in PADUS
-double_lakes <- intersect(protected_GAPS12_df_PADUS$COMID, protected_GAP3only_df_PADUS$COMID)
-protected_GAP3only_df_PADUS <- subset(protected_GAP3only_df_PADUS, !(COMID %in% double_lakes)) #take out lakes that occur in both
+double_lakes <- intersect(protected_GAPS12@data$COMID, protected_GAP3only@data$COMID)
+protected_GAP3only <- subset(protected_GAP3only, !(COMID %in% double_lakes)) #take out lakes that occur in both
+protected_GAP3only <- merge(protected_GAP3only, PADUS_LakeCat, by='COMID')
+protected_GAP3only_perm <- subset(protected_GAP3only, FCODE %in% LAGOS_FCODES)
+protected_GAP3only_inter <- subset(protected_GAP3only, FCODE %in% intermittent_FCODES)
 
 # Unprotected lakes: all other lakes in LakeCat
 unprotected_df <- merge(PADUS_LakeCat, NHD_pts, by='COMID', all=F) #merge to NHD to get lake area column
-unprotected_df <- subset(unprotected_df, AREASQKM >= lake_sqkm_cutoff) #remove too small lakes
-unprotected_df <- unprotected_df[!duplicated(unprotected_df$COMID),] #remove duplicate COMIDs
-
-unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAPS12_df_PADUS$COMID))#remove strictly protected lakes
-unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAP3only_df_PADUS$COMID))#remove multi-use lakes
+unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAPS12@data$COMID))#remove strictly protected lakes
+unprotected_df <- subset(unprotected_df, !(COMID %in% protected_GAP3only@data$COMID))#remove multi-use lakes
 
 # save unprotected COMIDs
 #write.csv(unprotected_df$COMID, "Data/unprotected_COMID.csv")
 
 ## What proportion of lakes is protected/unprotected (simply falls within a protected area)?
-total_n_lakes <- nrow(unprotected_df) + nrow(protected_GAP3only_df_PADUS) + nrow(protected_GAPS12_df_PADUS)
-nrow(protected_GAPS12_df_PADUS)/total_n_lakes
-nrow(protected_GAP3only_df_PADUS)/total_n_lakes
+total_n_lakes <- nrow(unprotected_df) + nrow(protected_GAPS12@data) + nrow(protected_GAP3only@data)
+nrow(protected_GAPS12@data)/total_n_lakes
+nrow(protected_GAP3only@data)/total_n_lakes
+(nrow(protected_GAPS12@data)+nrow(protected_GAP3only@data))/total_n_lakes
 nrow(unprotected_df)/total_n_lakes
 
-# # # Export shapefiles of % protected for mapping in ArcGIS (first merge back to NHD pts)
-# PADUS_protected_GAPS12_export <- merge(NHD_pts, protected_GAPS12_df_PADUS, by='COMID', all.x=F)
+# # Export shapefiles of % protected for mapping in ArcGIS (first merge back to NHD pts)
+# # Strict
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
 # layername <- "NHD_protect_pts_GAPS12_pct"
-# writeOGR(PADUS_protected_GAPS12_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-# # # #
-# PADUS_protected_GAP3only_export <- merge(NHD_pts, protected_GAP3only_df_PADUS, by='COMID', all.x=F)
+# writeOGR(protected_GAPS12, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+# # Multi-use
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
 # layername <- "NHD_protect_pts_GAP3only_pct"
-# writeOGR(PADUS_protected_GAP3only_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
-# # # #
+# writeOGR(protected_GAP3only, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
+# # Unprotected
 # PADUS_unprotected_export <- merge(NHD_pts, unprotected_df, by='COMID', all.x=F)
 # dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
 # layername <- "NHD_unprotected_pts"
@@ -125,50 +163,107 @@ png("Figures/protected_lakes_histogram.png", width = 7,height = 5,units = 'in',r
   # PLOT A
   par(mar=c(2,3,4,0.5)) #bot,left,top,right
   hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
-  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Cat, xlab='', main='a) Strict, catchment',breaks=seq(0,100,20),
-      col=hist_colors, ylim=c(0,20000))
+  hist(protected_GAPS12@data$PctGAP_Status12Cat, xlab='', main='a) Strict, catchment',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
   title(ylab='Frequency', line=2.2)
-  mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  mtext(side=3, paste0(nrow(protected_GAPS12@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
   # PLOT B
   par(mar=c(2,2,4,1.5)) #bot,left,top,right
-  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Ws, xlab='', main='b) Strict, watershed',breaks=seq(0,100,20),
+  hist(protected_GAPS12@data$PctGAP_Status12Ws, xlab='', main='b) Strict, watershed',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), ylab='')
-  mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  mtext(side=3, paste0(nrow(protected_GAPS12@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
   # PLOT C
   par(mar=c(3,3,3,0.5)) #bot,left,top,right
-  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Cat, xlab='% protected', main='c) Multi-use, catchment',breaks=seq(0,100,20),
-      col=hist_colors, ylim=c(0,20000))
-  title(xlab='% protected', line=2)
-  title(ylab='Frequency', line=2.2)
-  mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
-  # PLOT D
-  par(mar=c(3,2,3,1.5)) #bot,left,top,right
-  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Ws, xlab='% protected', main='d) Multi-use, watershed',breaks=seq(0,100,20),
+  hist(protected_GAP3only@data$PctGAP_Status3Cat, xlab='% protected', main='c) Multi-use, catchment',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), ylab='')
   title(xlab='% protected', line=2)
-  mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
+  title(ylab='Frequency', line=2.2)
+  mtext(side=3, paste0(nrow(protected_GAP3only@data), ' lakes'), cex=0.75)
+  # PLOT D
+  par(mar=c(3,2,3,1.5)) #bot,left,top,right
+  hist(protected_GAP3only@data$PctGAP_Status3Ws, xlab='% protected', main='d) Multi-use, watershed',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(xlab='% protected', line=2)
+  mtext(side=3, paste0(nrow(protected_GAP3only@data), ' lakes'), cex=0.75)
+dev.off()
+
+png("Figures/protected_lakes_histogram_perm.png", width = 7,height = 5,units = 'in',res=600)
+  par(mfrow=c(2,2))
+  # PLOT A
+  par(mar=c(2,3,4,0.5)) #bot,left,top,right
+  hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+  hist(protected_GAPS12_perm@data$PctGAP_Status12Cat, xlab='', main='a) Strict, catchment',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(ylab='Frequency', line=2.2)
+  mtext(side=3, paste0(nrow(protected_GAPS12_perm@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  # PLOT B
+  par(mar=c(2,2,4,1.5)) #bot,left,top,right
+  hist(protected_GAPS12_perm@data$PctGAP_Status12Ws, xlab='', main='b) Strict, watershed',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  mtext(side=3, paste0(nrow(protected_GAPS12_perm@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  # PLOT C
+  par(mar=c(3,3,3,0.5)) #bot,left,top,right
+  hist(protected_GAP3only_perm@data$PctGAP_Status3Cat, xlab='% protected', main='c) Multi-use, catchment',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(xlab='% protected', line=2)
+  title(ylab='Frequency', line=2.2)
+  mtext(side=3, paste0(nrow(protected_GAP3only_perm@data), ' lakes'), cex=0.75)
+  # PLOT D
+  par(mar=c(3,2,3,1.5)) #bot,left,top,right
+  hist(protected_GAP3only_perm@data$PctGAP_Status3Ws, xlab='% protected', main='d) Multi-use, watershed',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(xlab='% protected', line=2)
+  mtext(side=3, paste0(nrow(protected_GAP3only_perm@data), ' lakes'), cex=0.75)
+dev.off()
+
+png("Figures/protected_lakes_histogram_intermit.png", width = 7,height = 5,units = 'in',res=600)
+  par(mfrow=c(2,2))
+  # PLOT A
+  par(mar=c(2,3,4,0.5)) #bot,left,top,right
+  hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+  hist(protected_GAPS12_inter@data$PctGAP_Status12Cat, xlab='', main='a) Strict, catchment',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(ylab='Frequency', line=2.2)
+  mtext(side=3, paste0(nrow(protected_GAPS12_inter@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  # PLOT B
+  par(mar=c(2,2,4,1.5)) #bot,left,top,right
+  hist(protected_GAPS12_inter@data$PctGAP_Status12Ws, xlab='', main='b) Strict, watershed',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  mtext(side=3, paste0(nrow(protected_GAPS12_inter@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  # PLOT C
+  par(mar=c(3,3,3,0.5)) #bot,left,top,right
+  hist(protected_GAP3only_inter@data$PctGAP_Status3Cat, xlab='% protected', main='c) Multi-use, catchment',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(xlab='% protected', line=2)
+  title(ylab='Frequency', line=2.2)
+  mtext(side=3, paste0(nrow(protected_GAP3only_inter@data), ' lakes'), cex=0.75)
+  # PLOT D
+  par(mar=c(3,2,3,1.5)) #bot,left,top,right
+  hist(protected_GAP3only_inter@data$PctGAP_Status3Ws, xlab='% protected', main='d) Multi-use, watershed',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), ylab='')
+  title(xlab='% protected', line=2)
+  mtext(side=3, paste0(nrow(protected_GAP3only_inter@data), ' lakes'), cex=0.75)
 dev.off()
 
 ## Catchment and watershed plots separately (2 row, 1 col)
-
 
 png("Figures/protected_lakes_histogram_Cat.png", width = 3.5,height = 5,units = 'in',res=600)
   par(mfrow=c(2,1))
   # PLOT A
   par(mar=c(2,3,4,0.5)) #bot,left,top,right
   hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
-  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Cat, xlab='', main='',breaks=seq(0,100,20),
+  hist(protected_GAPS12@data$PctGAP_Status12Cat, xlab='', main='',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), adj=0)
   title(ylab='Frequency', line=2.2)
-  #mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  #mtext(side=3, paste0(nrow(protected_GAPS12@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
 
   # PLOT C
   par(mar=c(3,3,3,0.5)) #bot,left,top,right
-  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Cat, xlab='% protected', main='',breaks=seq(0,100,20),
+  hist(protected_GAP3only@data$PctGAP_Status3Cat, xlab='% protected', main='',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), adj=0)
   title(xlab='% protected', line=2)
   title(ylab='Frequency', line=2.2)
-  #mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
+  #mtext(side=3, paste0(nrow(protected_GAP3only@data), ' lakes'), cex=0.75)
 dev.off()
 
 png("Figures/protected_lakes_histogram_Ws.png", width = 3.5,height = 5,units = 'in',res=600)
@@ -176,47 +271,171 @@ png("Figures/protected_lakes_histogram_Ws.png", width = 3.5,height = 5,units = '
   # PLOT 1
   par(mar=c(2,3,4,0.5)) #bot,left,top,right
   hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
-  hist(protected_GAPS12_df_PADUS$PctGAP_Status12Ws, xlab='', main='',breaks=seq(0,100,20),
+  hist(protected_GAPS12@data$PctGAP_Status12Ws, xlab='', main='',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), adj=0)
   title(ylab='Frequency', line=2.2)
-  #mtext(side=3, paste0(nrow(protected_GAPS12_df_PADUS), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+  #mtext(side=3, paste0(nrow(protected_GAPS12@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
 
   # PLOT 2
   par(mar=c(3,3,3,0.5)) #bot,left,top,right
-  hist(protected_GAP3only_df_PADUS$PctGAP_Status3Ws, xlab='% protected', main='',breaks=seq(0,100,20),
+  hist(protected_GAP3only@data$PctGAP_Status3Ws, xlab='% protected', main='',breaks=seq(0,100,20),
       col=hist_colors, ylim=c(0,20000), adj=0)
   title(xlab='% protected', line=2)
   title(ylab='Frequency', line=2.2)
-  #mtext(side=3, paste0(nrow(protected_GAP3only_df_PADUS), ' lakes'), cex=0.75)
+  #mtext(side=3, paste0(nrow(protected_GAP3only@data), ' lakes'), cex=0.75)
+dev.off()
+## Same figures, but for permanent lakes only
+png("Figures/protected_lakes_histogram_Cat_perm.png", width = 3.5,height = 5,units = 'in',res=600)
+  par(mfrow=c(2,1))
+  # PLOT A
+  par(mar=c(2,3,4,0.5)) #bot,left,top,right
+  hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+  hist(protected_GAPS12_perm@data$PctGAP_Status12Cat, xlab='', main='',breaks=seq(0,100,20),
+       col=hist_colors, ylim=c(0,20000), adj=0)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAPS12_perm@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
+
+  # PLOT C
+  par(mar=c(3,3,3,0.5)) #bot,left,top,right
+  hist(protected_GAP3only_perm@data$PctGAP_Status3Cat, xlab='% protected', main='',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), adj=0)
+  title(xlab='% protected', line=2)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAP3only_perm@data), ' lakes'), cex=0.75)
 dev.off()
 
-# What proportion of lakes that occur in protected areas has X amount of catchment/watershed protection?
-summary(protected_GAPS12_df_PADUS)
-nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat < 20))/nrow(protected_GAPS12_df_PADUS)
-nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws < 20))/nrow(protected_GAPS12_df_PADUS)
-nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat > 80))/nrow(protected_GAPS12_df_PADUS)
-nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws > 80))/nrow(protected_GAPS12_df_PADUS)
+png("Figures/protected_lakes_histogram_Ws_perm.png", width = 3.5,height = 5,units = 'in',res=600)
+  par(mfrow=c(2,1))
+  # PLOT 1
+  par(mar=c(2,3,4,0.5)) #bot,left,top,right
+  hist_colors <- c('firebrick','darksalmon','moccasin','lightskyblue','dodgerblue4')
+  hist(protected_GAPS12_perm@data$PctGAP_Status12Ws, xlab='', main='',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), adj=0)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAPS12_perm@data), ' lakes'), cex=0.75, line=0.5) #line= adjusts position 
 
-summary(protected_GAP3only_df_PADUS)
-nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat < 20))/nrow(protected_GAP3only_df_PADUS)
-nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws < 20))/nrow(protected_GAP3only_df_PADUS)
-nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat > 80))/nrow(protected_GAP3only_df_PADUS)
-nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws > 80))/nrow(protected_GAP3only_df_PADUS)
+  # PLOT 2
+  par(mar=c(3,3,3,0.5)) #bot,left,top,right
+  hist(protected_GAP3only_perm@data$PctGAP_Status3Ws, xlab='% protected', main='',breaks=seq(0,100,20),
+      col=hist_colors, ylim=c(0,20000), adj=0)
+  title(xlab='% protected', line=2)
+  title(ylab='Frequency', line=2.2)
+  #mtext(side=3, paste0(nrow(protected_GAP3only_perm@data), ' lakes'), cex=0.75)
+dev.off()
+
+## What proportion of lakes that occur in protected areas has X amount of catchment/watershed protection?
+# Strict
+summary(protected_GAPS12@data)
+nrow(subset(protected_GAPS12@data, PctGAP_Status12Cat < 20))/nrow(protected_GAPS12@data)
+nrow(subset(protected_GAPS12@data, PctGAP_Status12Ws < 20))/nrow(protected_GAPS12@data)
+nrow(subset(protected_GAPS12@data, PctGAP_Status12Cat > 80))/nrow(protected_GAPS12@data)
+nrow(subset(protected_GAPS12@data, PctGAP_Status12Ws > 80))/nrow(protected_GAPS12@data)
+
+summary(protected_GAPS12_perm@data)
+nrow(subset(protected_GAPS12_perm@data, PctGAP_Status12Cat < 20))/nrow(protected_GAPS12_perm@data)
+nrow(subset(protected_GAPS12_perm@data, PctGAP_Status12Ws < 20))/nrow(protected_GAPS12_perm@data)
+nrow(subset(protected_GAPS12_perm@data, PctGAP_Status12Cat > 80))/nrow(protected_GAPS12_perm@data)
+nrow(subset(protected_GAPS12_perm@data, PctGAP_Status12Ws > 80))/nrow(protected_GAPS12_perm@data)
+
+summary(protected_GAPS12_inter@data)
+nrow(subset(protected_GAPS12_inter@data, PctGAP_Status12Cat < 20))/nrow(protected_GAPS12_inter@data)
+nrow(subset(protected_GAPS12_inter@data, PctGAP_Status12Ws < 20))/nrow(protected_GAPS12_inter@data)
+nrow(subset(protected_GAPS12_inter@data, PctGAP_Status12Cat > 80))/nrow(protected_GAPS12_inter@data)
+nrow(subset(protected_GAPS12_inter@data, PctGAP_Status12Ws > 80))/nrow(protected_GAPS12_inter@data)
+
+# multi-use
+summary(protected_GAP3only@data)
+nrow(subset(protected_GAP3only@data, PctGAP_Status3Cat < 20))/nrow(protected_GAP3only@data)
+nrow(subset(protected_GAP3only@data, PctGAP_Status3Ws < 20))/nrow(protected_GAP3only@data)
+nrow(subset(protected_GAP3only@data, PctGAP_Status3Cat > 80))/nrow(protected_GAP3only@data)
+nrow(subset(protected_GAP3only@data, PctGAP_Status3Ws > 80))/nrow(protected_GAP3only@data)
+
+summary(protected_GAP3only_perm@data)
+nrow(subset(protected_GAP3only_perm@data, PctGAP_Status3Cat < 20))/nrow(protected_GAP3only_perm@data)
+nrow(subset(protected_GAP3only_perm@data, PctGAP_Status3Ws < 20))/nrow(protected_GAP3only_perm@data)
+nrow(subset(protected_GAP3only_perm@data, PctGAP_Status3Cat > 80))/nrow(protected_GAP3only_perm@data)
+nrow(subset(protected_GAP3only_perm@data, PctGAP_Status3Ws > 80))/nrow(protected_GAP3only_perm@data)
+
+summary(protected_GAP3only_inter@data)
+nrow(subset(protected_GAP3only_inter@data, PctGAP_Status3Cat < 20))/nrow(protected_GAP3only_inter@data)
+nrow(subset(protected_GAP3only_inter@data, PctGAP_Status3Ws < 20))/nrow(protected_GAP3only_inter@data)
+nrow(subset(protected_GAP3only_inter@data, PctGAP_Status3Cat > 80))/nrow(protected_GAP3only_inter@data)
+nrow(subset(protected_GAP3only_inter@data, PctGAP_Status3Ws > 80))/nrow(protected_GAP3only_inter@data)
 
 # Create subset of lakes with fully protected catchments/watersheds
-protected_GAPS12_df_PADUS_100pct <- subset(protected_GAPS12_df_PADUS, PctGAP_Status12Cat >= 100)
-protected_GAP3only_df_PADUS_100pct <- subset(protected_GAP3only_df_PADUS, PctGAP_Status3Cat >= 100)
-nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws >= 100))
-nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws >= 100))
+protected_GAPS12_df_PADUS_100pct <- subset(protected_GAPS12@data, PctGAP_Status12Cat >= 100)
+protected_GAPS12_df_PADUS_100pct_perm <- subset(protected_GAPS12_df_PADUS_100pct, FCODE %in% LAGOS_FCODES)
+protected_GAPS12_df_PADUS_100pct_inter <- subset(protected_GAPS12_df_PADUS_100pct, FCODE %in% intermittent_FCODES)
+protected_GAP3only_df_PADUS_100pct <- subset(protected_GAP3only@data, PctGAP_Status3Cat >= 100)
+protected_GAP3only_df_PADUS_100pct_perm <- subset(protected_GAP3only_df_PADUS_100pct, FCODE %in% LAGOS_FCODES)
+protected_GAP3only_df_PADUS_100pct_inter <- subset(protected_GAP3only_df_PADUS_100pct, FCODE %in% intermittent_FCODES)
+
+nrow(subset(protected_GAPS12@data, PctGAP_Status12Ws >= 100))
+nrow(subset(protected_GAP3only@data, PctGAP_Status3Ws >= 100))
 
 # What proportion of lakes have fully protected catchments/watersheds?
 nrow(protected_GAPS12_df_PADUS_100pct)/total_n_lakes
 nrow(protected_GAP3only_df_PADUS_100pct)/total_n_lakes
-nrow(subset(protected_GAPS12_df_PADUS, PctGAP_Status12Ws >= 100))/total_n_lakes
-nrow(subset(protected_GAP3only_df_PADUS, PctGAP_Status3Ws >= 100))/total_n_lakes
+nrow(subset(protected_GAPS12@data, PctGAP_Status12Ws >= 100))/total_n_lakes
+nrow(subset(protected_GAP3only@data, PctGAP_Status3Ws >= 100))/total_n_lakes
+
+# What % of protected lakes is intermittent?
+nrow(protected_GAPS12_inter)/sum(nrow(protected_GAPS12_perm)+nrow(protected_GAPS12_inter))
+nrow(protected_GAP3only_inter)/sum(nrow(protected_GAP3only_perm)+nrow(protected_GAP3only_inter))
+sum(nrow(protected_GAPS12_inter)+nrow(protected_GAP3only_inter))/sum(sum(nrow(protected_GAPS12_perm)+nrow(protected_GAPS12_inter))+sum(nrow(protected_GAP3only_perm)+nrow(protected_GAP3only_inter)))
+
+# What % of all lakes is intermittent or permanent?
+nrow(NHD_pts_inter@data)/total_n_lakes
+nrow(NHD_pts_perm@data)/total_n_lakes
+
+# What % of intermittent lakes is protected?
+nrow(protected_GAPS12_inter)/nrow(NHD_pts_inter@data)
+nrow(protected_GAP3only_inter)/nrow(NHD_pts_inter@data)
+sum(nrow(protected_GAPS12_inter)+nrow(protected_GAP3only_inter))/nrow(NHD_pts_inter@data)
+
+# What % of permanent lakes is protected?
+nrow(protected_GAPS12_perm)/nrow(NHD_pts_perm@data)
+nrow(protected_GAP3only_perm)/nrow(NHD_pts_perm@data)
+sum(nrow(protected_GAPS12_perm)+nrow(protected_GAP3only_perm))/nrow(NHD_pts_perm@data)
+
+nrow(protected_GAPS12_inter)/total_n_lakes
+nrow(protected_GAP3only_inter)/total_n_lakes
+sum(nrow(protected_GAPS12_inter)+nrow(protected_GAP3only_inter))/total_n_lakes
+
+## Breakdown of protected vs. unprotected lakes by NHD FCODE
+unprotected_FCODE <- as.data.frame(unprotected_df %>%
+                                   group_by(FCODE) %>%
+                                   tally())
+names(unprotected_FCODE) <- c('FCODE','unprotected')
+
+protected_GAPS12_ctr_FCODE <- as.data.frame(protected_GAPS12@data %>%
+                                              group_by(FCODE) %>%
+                                              tally())
+names(protected_GAPS12_ctr_FCODE) <- c('FCODE','GAPS12_ctr')
+
+protected_GAP3only_ctr_FCODE <- as.data.frame(protected_GAP3only@data %>%
+                                              group_by(FCODE) %>%
+                                              tally())
+names(protected_GAP3only_ctr_FCODE) <- c('FCODE','GAP3_ctr')
+
+protected_GAPS12_100pct_FCODE <- as.data.frame(protected_GAPS12_df_PADUS_100pct %>%
+                                              group_by(FCODE) %>%
+                                              tally())
+names(protected_GAPS12_100pct_FCODE) <- c('FCODE','GAPS12_100pct')
+
+protected_GAP3only_100pct_FCODE <- as.data.frame(protected_GAP3only_df_PADUS_100pct %>%
+                                                 group_by(FCODE) %>%
+                                                 tally())
+names(protected_GAP3only_100pct_FCODE) <- c('FCODE','GAP3_100pct')
+
+FCODE_table <- Reduce(function(x, y) merge(x, y, all=T), list(protected_GAPS12_ctr_FCODE, protected_GAP3only_ctr_FCODE, protected_GAPS12_100pct_FCODE,
+                                                                 protected_GAP3only_100pct_FCODE, unprotected_FCODE))
+
+FCODE_table$total_ctr <- rowSums(FCODE_table[,c(2,3,6)], na.rm=T)
+FCODE_table$total_100pct <- rowSums(FCODE_table[,c(4,5,6)], na.rm=T)
 
 ##  Violin plot of protection across all US lakes
-all_lake_COMID <- c(unprotected_df$COMID, protected_GAPS12_df_PADUS$COMID, protected_GAP3only_df_PADUS$COMID) 
+all_lake_COMID <- c(unprotected_df$COMID, protected_GAPS12@data$COMID, protected_GAP3only@data$COMID) 
 violin_df <- subset(PADUS_LakeCat, COMID %in% all_lake_COMID)
 violin_df[is.na(violin_df)] <- 0 #convert NAs to 0; treat NA protection as 0 protection
 
@@ -258,8 +477,9 @@ Fahr$TotalPctFireWs <- rowSums(Fahr[,18:28])
 # Forest Loss
 ForestLoss$TotalPctFrstLossCat <- rowSums(ForestLoss[,7:19])
 ForestLoss$TotalPctFrstLossWs <- rowSums(ForestLoss[,20:32])
-
 ## Create new merged tables for plotting
+protected_GAPS12_df_PADUS <- protected_GAPS12@data
+protected_GAP3only_df_PADUS <- protected_GAP3only@data
 # LULC
 protected_GAPS12_df_PADUS_NLCD <- merge(protected_GAPS12_df_PADUS, NLCD_2011, by='COMID', all.x=F)
 protected_GAP3only_df_PADUS_NLCD <- merge(protected_GAP3only_df_PADUS, NLCD_2011, by='COMID', all.x=F)
@@ -905,8 +1125,15 @@ LakeConn_countz <- as.data.frame(LAGOSconn %>%
 
 barplot(LakeConn_countz$n, names.arg=LakeConn_countz$LakeConnec, las=1)
 
+# Match rate?
+sum(LakeConn_countz$n)/total_n_lakes
+sum(LakeConn_countz$n)/nrow(NHD_pts_perm@data)
+
 # Strict protection, lake center
-protected_GAPS12_df_PADUS_conn <- merge(protected_GAPS12_df_PADUS, LAGOSconn, by.x='COMID', 
+#protected_GAPS12_df_PADUS_conn <- merge(protected_GAPS12_df_PADUS, LAGOSconn, by.x='COMID', 
+#                                        by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAPS12_df_PADUS_conn <- merge(protected_GAPS12_perm@data, LAGOSconn, by.x='COMID', 
                                         by.y='nhdplusv2_comid', all.x=F)
 
 protected_GAPS12_conn_countz <- as.data.frame(protected_GAPS12_df_PADUS_conn %>%
@@ -918,7 +1145,10 @@ protected_GAPS12_conn_countz$prop_protected <- protected_GAPS12_conn_countz$n_pr
 protected_GAPS12_conn_countz$Group <- 'Strict center'
 
 # multi-use, lake center
-protected_GAP3only_df_PADUS_conn <- merge(protected_GAP3only_df_PADUS, LAGOSconn, by.x='COMID', 
+#protected_GAP3only_df_PADUS_conn <- merge(protected_GAP3only_df_PADUS, LAGOSconn, by.x='COMID',
+#                                          by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAP3only_df_PADUS_conn <- merge(protected_GAP3only_perm@data, LAGOSconn, by.x='COMID', 
                                           by.y='nhdplusv2_comid', all.x=F)
 
 protected_GAPS3only_conn_countz <- as.data.frame(protected_GAP3only_df_PADUS_conn %>%
@@ -930,7 +1160,10 @@ protected_GAPS3only_conn_countz$prop_protected <- protected_GAPS3only_conn_count
 protected_GAPS3only_conn_countz$Group <- 'Multi-use center'
 
 # strict, 100% cat protection
-protected_GAPS12_df_PADUS_100pct_conn <- merge(protected_GAPS12_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
+#protected_GAPS12_df_PADUS_100pct_conn <- merge(protected_GAPS12_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
+#                                               by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAPS12_df_PADUS_100pct_conn <- merge(protected_GAPS12_df_PADUS_100pct_perm, LAGOSconn, by.x='COMID', 
                                                by.y='nhdplusv2_comid', all.x=F)
 
 protected_GAPS12_100pct_conn_countz <- as.data.frame(protected_GAPS12_df_PADUS_100pct_conn %>%
@@ -942,7 +1175,10 @@ protected_GAPS12_100pct_conn_countz$prop_protected <- protected_GAPS12_100pct_co
 protected_GAPS12_100pct_conn_countz$Group <- 'Strict cat'
 
 # multi-use, 100% cat protection
-protected_GAP3only_df_PADUS_100pct_conn <- merge(protected_GAP3only_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
+#protected_GAP3only_df_PADUS_100pct_conn <- merge(protected_GAP3only_df_PADUS_100pct, LAGOSconn, by.x='COMID', 
+#                                                 by.y='nhdplusv2_comid', all.x=F)
+
+protected_GAP3only_df_PADUS_100pct_conn <- merge(protected_GAP3only_df_PADUS_100pct_perm, LAGOSconn, by.x='COMID', 
                                                  by.y='nhdplusv2_comid', all.x=F)
 
 protected_GAP3only_100pct_conn_countz <- as.data.frame(protected_GAP3only_df_PADUS_100pct_conn %>%
@@ -1031,7 +1267,7 @@ stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = 
 #dev.off()
 
 # multi-panel stacked barplot for different definitions of lake protection
-png('Figures/panel_stacked_bar_conn_type_cat100.png',height = 6,width = 4.5,units = 'in',res=300)
+png('Figures/panel_stacked_bar_conn_type_cat100_perm.png',height = 6,width = 4.5,units = 'in',res=300)
   grid.arrange(stack_gg1, stack_gg2, nrow=2)
 dev.off()
 ######################### who actually looked this far down? ######################################

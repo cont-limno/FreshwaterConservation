@@ -17,6 +17,36 @@ library(gridExtra)
 #### Input data ####
 setwd('C:/Users/FWL/Documents/FreshwaterConservation')
 
+LAGOS_FCODES <- c(39000,39004,39009,39010,39011,39012,43600,43613,43615,43617,43618,43619,43621)
+#39000: lake/pond, no attributes
+#39004: lake/pond, perennial
+#39009: lake/pond, perennial, average water elevation
+#39010: lake/pond, perennial, normal pool
+#39011: lake/pond, perennial, date of photo
+#39012: lake/pond, perennial, spillway elevation
+#43600: reservoir
+#43613: reservoir, construction material, perennial
+#43615: reservoir, construction material, perennial
+#43617: reservoir, water storage
+#43618: reservoir, constuction material
+#43619: reservoir, constuction material
+#43621: reservoir, water storage, perennial
+
+### Others in NHD with FTYPE as LakePond or Reservoir
+# 43624: reservoir, treatment
+# 43601: reservoir, aquaculture
+# 43606: reservoir, disposal
+# 39001: lake/pond, intermittent ### KEEP?
+# 39005: lake/pond, intermittent, high water elevation ### KEEP?
+# 39006: lake/pond, intermittent, date of photo ### KEEP?
+# 43607: reservoir, evaporator
+# 43609: reservoir, treatment, cooling pond
+# 43605: reservoir, disposal tailings 
+intermittent_FCODES <- c(39001,39005,39006)
+all_FCODES <- c(LAGOS_FCODES, intermittent_FCODES)
+
+lake_sqkm_cutoff <- 0.01 #=1ha
+
 PADUS_table <- read.csv("Data/PADUS.csv")
 
 lower48 <- shapefile("Data/lower48/lower48.shp")
@@ -24,20 +54,52 @@ NARS_regions <- shapefile("Data/NARS_ecoregions/NARS_ecoregions.shp") #Natl Aqua
 NARS_regions <- spTransform(NARS_regions, crs(lower48)) #get into same crs as other data in analysis
 
 NHD_pts <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_waterbody_pts.shp")
-NHD_pts_lakes <- subset(NHD_pts, FTYPE=='LakePond' | FTYPE=='Reservoir')
+NHD_pts <- subset(NHD_pts, FTYPE=='LakePond' | FTYPE=='Reservoir')
+NHD_pts <- subset(NHD_pts, AREASQKM >= lake_sqkm_cutoff)
+NHD_pts <- NHD_pts[!duplicated(NHD_pts@data$COMID),] #remove duplicate COMID
+NHD_pts <- subset(NHD_pts, FCODE %in% all_FCODES)
+
+NHD_pts_inter <- subset(NHD_pts, FCODE %in% intermittent_FCODES)
+NHD_pts_perm <- subset(NHD_pts, FCODE %in% LAGOS_FCODES)
 
 ## define constants
 protection_cutoff <- 100 #percent catchment protected for lake to count as protected
 
-## Protected lakes (centroids)
+## Protected lakes (centroids); subdivide into all, permanent and intermittent lakes
 protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS12_pct.shp")
+protected_GAPS12_perm <- subset(protected_GAPS12, FCODE %in% LAGOS_FCODES)
+protected_GAPS12_inter <- subset(protected_GAPS12, FCODE %in% intermittent_FCODES)
+
 protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAP3only_pct.shp")
+protected_GAP3only_perm <- subset(protected_GAP3only, FCODE %in% LAGOS_FCODES)
+protected_GAP3only_inter <- subset(protected_GAP3only, FCODE %in% intermittent_FCODES)
+
 protected_GAPS12_COMIDs_ctr <- unique(protected_GAPS12@data$COMID)
 protected_GAP3only_COMIDS_ctr <- unique(protected_GAP3only@data$COMID)
+
+protected_GAPS12_COMIDs_perm <- unique(protected_GAPS12_perm@data$COMID)
+protected_GAP3only_COMIDS_perm <- unique(protected_GAP3only_perm@data$COMID)
+
+protected_GAPS12_COMIDs_inter <- unique(protected_GAPS12_inter@data$COMID)
+protected_GAP3only_COMIDS_inter <- unique(protected_GAP3only_inter@data$COMID)
+
 protected_GAPS12_COMIDs_100 <- subset(protected_GAPS12, PGAP_S12C >=protection_cutoff)
 protected_GAPS12_COMIDs_100 <- unique(protected_GAPS12_COMIDs_100@data$COMID)
+
+protected_GAPS12_COMIDs_100_perm <- subset(protected_GAPS12_perm, PGAP_S12C >=protection_cutoff)
+protected_GAPS12_COMIDs_100_perm <- unique(protected_GAPS12_COMIDs_100_perm@data$COMID)
+
+protected_GAPS12_COMIDs_100_inter <- subset(protected_GAPS12_inter, PGAP_S12C >=protection_cutoff)
+protected_GAPS12_COMIDs_100_inter <- unique(protected_GAPS12_COMIDs_100_inter@data$COMID)
+
 protected_GAP3only_COMIDs_100 <- subset(protected_GAP3only, PGAP_S3C >=protection_cutoff)
 protected_GAP3only_COMIDs_100 <- unique(protected_GAP3only_COMIDs_100@data$COMID)
+
+protected_GAP3only_COMIDs_100_perm <- subset(protected_GAP3only_perm, PGAP_S3C >=protection_cutoff)
+protected_GAP3only_COMIDs_100_perm <- unique(protected_GAP3only_COMIDs_100_perm@data$COMID)
+
+protected_GAP3only_COMIDs_100_inter <- subset(protected_GAP3only_inter, PGAP_S3C >=protection_cutoff)
+protected_GAP3only_COMIDs_100_inter <- unique(protected_GAP3only_COMIDs_100_inter@data$COMID)
 
 # unprotected lake COMIDs
 unprotected_COMIDs <- read.csv("Data/unprotected_COMID.csv")[,2]
@@ -47,20 +109,25 @@ source("Rcode/functions/protected_lakes_by_state.R")
 source("Rcode/functions/protected_lakes_by_NARS.R")
 
 ############################ Main program #####################################
-## Number and proportion of protected lakes per state
-NHD_pts_lakes_PADUS <- merge(NHD_pts_lakes, PADUS_table, by='COMID', all=F)
-NHD_pts_lakes_PADUS <- subset(NHD_pts_lakes_PADUS, AREASQKM >= 0.01) #remove lakes smaller than 1 ha
-
 # calculate total protection for GAPS 1-2 and GAPS 1-3
-NHD_pts_lakes_PADUS$PctGAP_Status12Cat <- NHD_pts_lakes_PADUS$PctGAP_Status1Cat + NHD_pts_lakes_PADUS$PctGAP_Status2Cat
-#NHD_pts_lakes_PADUS$PctGAP_Status123Cat <- NHD_pts_lakes_PADUS$PctGAP_Status1Cat + NHD_pts_lakes_PADUS$PctGAP_Status2Cat + NHD_pts_lakes_PADUS$PctGAP_Status3Cat
-NHD_pts_lakes_PADUS$PctGAP_Status12Ws <- NHD_pts_lakes_PADUS$PctGAP_Status1Ws + NHD_pts_lakes_PADUS$PctGAP_Status2Ws
-#NHD_pts_lakes_PADUS$PctGAP_Status123Ws <- NHD_pts_lakes_PADUS$PctGAP_Status1Ws + NHD_pts_lakes_PADUS$PctGAP_Status2Ws + NHD_pts_lakes_PADUS$PctGAP_Status3Ws
+PADUS_table$PctGAP_Status12Cat <- PADUS_table$PctGAP_Status1Cat + PADUS_table$PctGAP_Status2Cat
+#PADUS_table$PctGAP_Status123Cat <- PADUS_table$PctGAP_Status1Cat + PADUS_table$PctGAP_Status2Cat + PADUS_table$PctGAP_Status3Cat
+PADUS_table$PctGAP_Status12Ws <- PADUS_table$PctGAP_Status1Ws + PADUS_table$PctGAP_Status2Ws
+#PADUS_table$PctGAP_Status123Ws <- PADUS_table$PctGAP_Status1Ws + PADUS_table$PctGAP_Status2Ws + PADUS_table$PctGAP_Status3Ws
+
+# Number and proportion of protected lakes per state
+NHD_pts_PADUS <- merge(NHD_pts, PADUS_table, by='COMID', all=F)
+NHD_pts_PADUS_perm <- merge(NHD_pts_perm, PADUS_table, by='COMID',all=F)
+NHD_pts_PADUS_inter <- merge(NHD_pts_inter, PADUS_table, by='COMID',all=F)
 
 ## set protection cutoff (for local catchment and network watershed) and execute functions
-LakeProtection_byState <- protected_lakes_by_state(NHD_pts_lakes_PADUS, lower48)
-LakeProtection_byNARS <- protected_lakes_by_NARS(NHD_pts_lakes_PADUS, NARS_regions) #warning: slow
+LakeProtection_byState <- protected_lakes_by_state(NHD_pts_PADUS, lower48)
+LakeProtection_byState_perm <- protected_lakes_by_state(NHD_pts_PADUS_perm, lower48)
 
+LakeProtection_byNARS <- protected_lakes_by_NARS(NHD_pts_PADUS, NARS_regions) #warning: slow
+LakeProtection_byNARS_perm <- protected_lakes_by_NARS(NHD_pts_PADUS_perm, NARS_regions) #warning: slow
+
+## get ready to export output data
 LakeProtection_byState_Export <- LakeProtection_byState[,1:2]
 LakeProtection_byState_Export$Strict_ctr <- paste0(LakeProtection_byState$ProtectedLakes_gap12_ctr, ' (', round(LakeProtection_byState$PropProtected_gap12_ctr,2),')')
 LakeProtection_byState_Export$Multi_ctr <- paste0(LakeProtection_byState$ProtectedLakes_gap3_ctr, ' (', round(LakeProtection_byState$PropProtected_gap3_ctr,2),')')
@@ -68,8 +135,16 @@ LakeProtection_byState_Export$Strict_Cat100 <- paste0(LakeProtection_byState$Pro
 LakeProtection_byState_Export$Multi_Cat100 <- paste0(LakeProtection_byState$ProtectedLakes_gap3_Cat100, ' (', round(LakeProtection_byState$PropProtected_gap3_Cat100,2),')')
 LakeProtection_byState_Export$Unprotected <- paste0(LakeProtection_byState$unprotected_lakes, ' (', round(LakeProtection_byState$PropUnprotected,2),')')
 
+LakeProtection_byState_Export_perm <- LakeProtection_byState_perm[,1:2]
+LakeProtection_byState_Export_perm$Strict_ctr <- paste0(LakeProtection_byState_perm$ProtectedLakes_gap12_ctr, ' (', round(LakeProtection_byState_perm$PropProtected_gap12_ctr,2),')')
+LakeProtection_byState_Export_perm$Multi_ctr <- paste0(LakeProtection_byState_perm$ProtectedLakes_gap3_ctr, ' (', round(LakeProtection_byState_perm$PropProtected_gap3_ctr,2),')')
+LakeProtection_byState_Export_perm$Strict_Cat100 <- paste0(LakeProtection_byState_perm$ProtectedLakes_gap12_Cat100, ' (', round(LakeProtection_byState_perm$PropProtected_gap12_Cat100,2),')')
+LakeProtection_byState_Export_perm$Multi_Cat100 <- paste0(LakeProtection_byState_perm$ProtectedLakes_gap3_Cat100, ' (', round(LakeProtection_byState_perm$PropProtected_gap3_Cat100,2),')')
+LakeProtection_byState_Export_perm$Unprotected <- paste0(LakeProtection_byState_perm$unprotected_lakes, ' (', round(LakeProtection_byState_perm$PropUnprotected,2),')')
+
 # export table and reformat in Excel
 #write.csv(LakeProtection_byState_Export, file='Data/LakeProtection_byState.csv')
+#write.csv(LakeProtection_byState_Export_perm, file='Data/LakeProtection_byState_perm.csv')
 #write.csv(LakeProtection_byNARS, file='Data/LakeProtection_byNARS.csv')
 
 ### USES INTERMEDIATE DATA FROM FUNCTIONS: data only exist if run functions line by line
