@@ -1,6 +1,6 @@
 ############# LakeCat protected area analysis: prep data for Nick ##############################
 # Date: 11-26-18
-# updated: 3-20-19
+# updated: 4-17-19; keep only permanent lakes
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -14,10 +14,44 @@ library(vioplot)
 #### input data ####
 setwd("C:/Users/FWL/Documents/FreshwaterConservation")
 
+LAGOS_FCODES <- c(39000,39004,39009,39010,39011,39012,43600,43613,43615,43617,43618,43619,43621)
+#39000: lake/pond, no attributes
+#39004: lake/pond, perennial
+#39009: lake/pond, perennial, average water elevation
+#39010: lake/pond, perennial, normal pool
+#39011: lake/pond, perennial, date of photo
+#39012: lake/pond, perennial, spillway elevation
+#43600: reservoir
+#43613: reservoir, construction material, perennial
+#43615: reservoir, construction material, perennial
+#43617: reservoir, water storage
+#43618: reservoir, constuction material
+#43619: reservoir, constuction material
+#43621: reservoir, water storage, perennial
+
+### Others in NHD with FTYPE as LakePond or Reservoir
+# 43624: reservoir, treatment
+# 43601: reservoir, aquaculture
+# 43606: reservoir, disposal
+# 39001: lake/pond, intermittent ### KEEP?
+# 39005: lake/pond, intermittent, high water elevation ### KEEP?
+# 39006: lake/pond, intermittent, date of photo ### KEEP?
+# 43607: reservoir, evaporator
+# 43609: reservoir, treatment, cooling pond
+# 43605: reservoir, disposal tailings 
+intermittent_FCODES <- c(39001,39005,39006)
+all_FCODES <- c(LAGOS_FCODES, intermittent_FCODES)
+
+lake_sqkm_cutoff <- 0.01 #=1ha
+
 # NHD waterbodies (converted to points in ArcGIS) (NHDPlusV2 National dataset; downloaded November 2018)
 NHD_pts <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_waterbody_pts.shp")
+NHD_pts <- subset(NHD_pts, FTYPE=='LakePond' | FTYPE=='Reservoir')
+NHD_pts <- subset(NHD_pts, AREASQKM >= lake_sqkm_cutoff)
+NHD_pts <- NHD_pts[!duplicated(NHD_pts@data$COMID),] #remove duplicate COMID
+NHD_pts <- subset(NHD_pts, FCODE %in% LAGOS_FCODES)
 
-## Protected lakes (centroids)
+## Protected lakes (centroids) (created in Lakes_in_ProtectedAreas_2019.R; already subset to permanent lakes >=1ha)
 protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS12_pct.shp")
 protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAP3only_pct.shp")
 protected_GAPS12_COMIDs_100 <- subset(protected_GAPS12, PGAP_S12C >=100)
@@ -98,9 +132,6 @@ summary(as.factor(PADUS_LakeCat$ProtectGAP3_ctr))#check
 PADUS_LakeCat$Unprotected <- ifelse(PADUS_LakeCat$COMID %in% unprotected_COMIDs, 'Unprotected','Protected')
 summary(as.factor(PADUS_LakeCat$Unprotected))#check
 
-#### Filter out small lakes ####
-lake_sqkm_cutoff <- 0.01 #=1ha
-
 # Lake area
 NHD_pts@data$COMID <- as.numeric(NHD_pts@data$COMID) #COMID was character in NHD; must convert
 PADUS_NHD <- left_join(PADUS_LakeCat, NHD_pts@data, by='COMID')
@@ -108,6 +139,7 @@ PADUS_NHD <- PADUS_NHD[!duplicated(PADUS_NHD$COMID),] #remove duplicate COMID (6
 PADUS_NHD <- subset(PADUS_NHD, AREASQKM >= lake_sqkm_cutoff)
 COMID_1ha_above <- PADUS_NHD$COMID #get string of COMIDs >= 1ha for further subsetting below
 PADUS_LakeCat <- subset(PADUS_LakeCat, COMID %in% COMID_1ha_above) #overall table
+state_NARS_COMIDs <- subset(state_NARS_COMIDs, COMID %in% COMID_1ha_above)
 
 # Lake max depth
 #PADUS_NHD_maxdepth <- subset(PADUS_NHD, MaxDepth > 0) #meters
