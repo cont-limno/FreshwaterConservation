@@ -142,16 +142,16 @@ nrow(unprotected_df)/total_n_lakes
 
 # Export shapefiles of % protected for mapping in ArcGIS (first merge back to NHD pts)
 # # Strict
-# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
+# dsnname <- "Data/NHD/NHD_waterbody_pts"
 # layername <- "NHD_protect_pts_GAPS12_pct"
 # writeOGR(protected_GAPS12, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
 # # Multi-use
-# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
+# dsnname <- "Data/NHD/NHD_waterbody_pts"
 # layername <- "NHD_protect_pts_GAP3only_pct"
 # writeOGR(protected_GAP3only, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
 # # Unprotected
 # PADUS_unprotected_export <- merge(NHD_pts, unprotected_df, by='COMID', all.x=F)
-# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts"
+# dsnname <- "C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts" #too large to store on github
 # layername <- "NHD_unprotected_pts"
 # writeOGR(PADUS_unprotected_export, dsn=dsnname, layer=layername, driver="ESRI Shapefile", overwrite_layer = T)
 
