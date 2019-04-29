@@ -1,6 +1,6 @@
 ####################### Characteristics of lakes in US protected areas #########################
 # Date: 2-12-19
-# updated: 4-17-19
+# updated: 4-29-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -50,14 +50,14 @@ lake_sqkm_cutoff <- 0.01 #=1ha
 # lower 48 states
 lower48 <- shapefile("Data/lower48/lower48.shp") #same crs as NHD_pts
 
-## Protected lakes (centroids)
-protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/Arcgis/NHD_pts_GAPS12_ArcGIS_select.shp")
+## Protected lakes (centroids) (used ArcGIS select by location, then exported shapefile)
+protected_GAPS12 <- shapefile("Data/NHD/NHD_waterbody_pts/Arcgis/NHD_pts_GAPS12_ArcGIS_select.shp")
 protected_GAPS12  <- subset(protected_GAPS12 , FTYPE=='LakePond' | FTYPE=='Reservoir')
 protected_GAPS12 <- subset(protected_GAPS12, AREASQKM >= lake_sqkm_cutoff)
 protected_GAPS12 <- protected_GAPS12 [!duplicated(protected_GAPS12 @data$COMID),] #remove duplicate COMID
 protected_GAPS12 <- subset(protected_GAPS12, FCODE %in% LAGOS_FCODES)#permanent lakes only
 
-protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/Arcgis/NHD_pts_GAP3_only_ArcGIS_select.shp")
+protected_GAP3only <- shapefile("Data/NHD/NHD_waterbody_pts/Arcgis/NHD_pts_GAP3_only_ArcGIS_select.shp")
 protected_GAP3only <- subset(protected_GAP3only, FTYPE=='LakePond' | FTYPE=='Reservoir')
 protected_GAP3only <- subset(protected_GAP3only, AREASQKM >= lake_sqkm_cutoff)
 protected_GAP3only <- protected_GAP3only[!duplicated(protected_GAP3only@data$COMID),] #remove duplicate COMID
@@ -84,8 +84,9 @@ NHD_pts <- subset(NHD_pts, FCODE %in% LAGOS_FCODES)
 # https://gapanalysis.usgs.gov/padus/data/download/
 PADUS_LakeCat <- read.csv("Data/PADUS.csv")
 
-# LakeCat data downloaded November 2018 (some files too large for github repo, so stored all locally)
-# ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/LakeCat/FinalTables/
+# LakeCat data downloaded November 2018 (some files too large for github repo, so must download and store locally
+# originally from LakeCat: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/LakeCat/FinalTables/
+# Hill et al. 2018; https://doi.org/10.1086/697966
 elevation <- read.csv("C:/Ian_GIS/LakeCat/Elevation.csv")
 NLCD_2011 <- read.csv("C:/Ian_GIS/LakeCat/NLCD2011.csv")
 RoadDensity <- read.csv("C:/Ian_GIS/LakeCat/RoadDensity.csv")

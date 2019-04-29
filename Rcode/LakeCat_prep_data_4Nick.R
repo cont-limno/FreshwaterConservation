@@ -1,6 +1,6 @@
 ############# LakeCat protected area analysis: prep data for Nick ##############################
 # Date: 11-26-18
-# updated: 4-17-19; keep only permanent lakes
+# updated: 4-29-19; update data links
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -52,8 +52,8 @@ NHD_pts <- NHD_pts[!duplicated(NHD_pts@data$COMID),] #remove duplicate COMID
 NHD_pts <- subset(NHD_pts, FCODE %in% LAGOS_FCODES)
 
 ## Protected lakes (centroids) (created in Lakes_in_ProtectedAreas_2019.R; already subset to permanent lakes >=1ha)
-protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS12_pct.shp")
-protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAP3only_pct.shp")
+protected_GAPS12 <- shapefile("Data/NHD/NHD_waterbody_pts/NHD_protect_pts_GAPS12_pct.shp")
+protected_GAP3only <- shapefile("Data/NHD/NHD_waterbody_pts/NHD_protect_pts_GAP3only_pct.shp")
 protected_GAPS12_COMIDs_100 <- subset(protected_GAPS12, PGAP_S12C >=100)
 protected_GAPS12_COMIDs_100 <- unique(protected_GAPS12_COMIDs_100@data$COMID)
 protected_GAP3only_COMIDs_100 <- subset(protected_GAP3only, PGAP_S3C >=100)
@@ -73,8 +73,9 @@ lower48 <- shapefile("Data/lower48/lower48.shp") #same crs as NHD_pts
 # https://gapanalysis.usgs.gov/padus/data/download/
 PADUS_LakeCat <- read.csv("Data/PADUS.csv")
 
-# LakeCat data downloaded November 2018 (some files too large for github repo, so stored all locally)
-# ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/LakeCat/FinalTables/
+# LakeCat data downloaded November 2018 (some files too large for github repo, so must download and store locally
+# originally from LakeCat: ftp://newftp.epa.gov/EPADataCommons/ORD/NHDPlusLandscapeAttributes/LakeCat/FinalTables/
+# Hill et al. 2018; https://doi.org/10.1086/697966
 elevation <- read.csv("C:/Ian_GIS/LakeCat/Elevation.csv")
 NLCD_2011 <- read.csv("C:/Ian_GIS/LakeCat/NLCD2011.csv")
 RoadDensity <- read.csv("C:/Ian_GIS/LakeCat/RoadDensity.csv")

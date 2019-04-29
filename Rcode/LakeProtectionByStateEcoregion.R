@@ -1,6 +1,6 @@
 ####################### Lake protection by US state and NARS ecoregion #########################
 # Date: 12-5-18
-# updated: 4-10-19
+# updated: 4-29-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -66,11 +66,11 @@ NHD_pts_perm <- subset(NHD_pts, FCODE %in% LAGOS_FCODES)
 protection_cutoff <- 100 #percent catchment protected for lake to count as protected
 
 ## Protected lakes (centroids); subdivide into all, permanent and intermittent lakes
-protected_GAPS12 <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAPS12_pct.shp")
+protected_GAPS12 <- shapefile("Data/NHD/NHD_waterbody_pts/NHD_protect_pts_GAPS12_pct.shp")
 protected_GAPS12_perm <- subset(protected_GAPS12, FCODE %in% LAGOS_FCODES)
 protected_GAPS12_inter <- subset(protected_GAPS12, FCODE %in% intermittent_FCODES)
 
-protected_GAP3only <- shapefile("C:/Ian_GIS/NHD/NHD_waterbody_pts/NHD_protected_pts/NHD_protect_pts_GAP3only_pct.shp")
+protected_GAP3only <- shapefile("Data/NHD/NHD_waterbody_pts/NHD_protect_pts_GAP3only_pct.shp")
 protected_GAP3only_perm <- subset(protected_GAP3only, FCODE %in% LAGOS_FCODES)
 protected_GAP3only_inter <- subset(protected_GAP3only, FCODE %in% intermittent_FCODES)
 
