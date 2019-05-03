@@ -1,6 +1,6 @@
 ####################### Characteristics of lakes in US protected areas #########################
 # Date: 2-12-19
-# updated: 4-29-19
+# updated: 5-3-19
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -305,8 +305,8 @@ png("Figures/violin_pct_protected.png", width = 7,height = 5,units = 'in',res=60
   par(mar=c(3,4,2,0.5)) #bot,left,top,right
   plot(0.5:5,0.5:5,type="n",ylim=c(0,100),
       axes=FALSE,ann=FALSE)
-  vioplot(v1,v2,v3,v4,add=T, col='gray70')
-  axis(side=1,at=1:4,labels=c('Strict, Cat', 'Multi-use, Cat', 'Strict, Ws', 'Multi-use, Ws'))
+  vioplot(v1,v2,add=T, col='gray70')
+  axis(side=1,at=1:2,labels=c('Strict', 'Multi-use'))
   axis(side=2,at=seq(0,100,10),labels=seq(0,100,10))
   title(ylab='Percent protected', line=2.2)
 dev.off()
