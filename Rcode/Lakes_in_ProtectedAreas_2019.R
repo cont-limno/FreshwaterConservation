@@ -253,9 +253,9 @@ nrow(subset(protected_GAPS12@data, PctGAP_Status12Ws >= 100))/total_n_lakes
 nrow(subset(protected_GAP3only@data, PctGAP_Status3Ws >= 100))/total_n_lakes
 
 # What % of protected lakes is intermittent?
-nrow(protected_GAPS12_inter)/sum(nrow(protected_GAPS12_perm)+nrow(protected_GAPS12_inter))
-nrow(protected_GAP3only_inter)/sum(nrow(protected_GAP3only_perm)+nrow(protected_GAP3only_inter))
-sum(nrow(protected_GAPS12_inter)+nrow(protected_GAP3only_inter))/sum(sum(nrow(protected_GAPS12_perm)+nrow(protected_GAPS12_inter))+sum(nrow(protected_GAP3only_perm)+nrow(protected_GAP3only_inter)))
+#nrow(protected_GAPS12_inter)/sum(nrow(protected_GAPS12_perm)+nrow(protected_GAPS12_inter))
+#nrow(protected_GAP3only_inter)/sum(nrow(protected_GAP3only_perm)+nrow(protected_GAP3only_inter))
+#sum(nrow(protected_GAPS12_inter)+nrow(protected_GAP3only_inter))/sum(sum(nrow(protected_GAPS12_perm)+nrow(protected_GAPS12_inter))+sum(nrow(protected_GAP3only_perm)+nrow(protected_GAP3only_inter)))
 
 ## Breakdown of protected vs. unprotected lakes by NHD FCODE
 unprotected_FCODE <- as.data.frame(unprotected_df %>%
@@ -1049,7 +1049,8 @@ stacked_df <- rbind.data.frame(protected_GAPS12_conn_countz[,c(1,4,5)],protected
 stacked_df$prop_protected <- stacked_df$prop_protected*100 #convert prop to pct
 stacked_df$Group <- as.factor(stacked_df$Group)
 stacked_df$Group <- factor(stacked_df$Group,levels(stacked_df$Group)[c(2,1)])
-stacked_df$LakeConnec <-factor(stacked_df$LakeConnec,levels(stacked_df$LakeConnec)[c(1,3,4,2)])
+#stacked_df$LakeConnec <-factor(stacked_df$LakeConnec,levels(stacked_df$LakeConnec)[c(1,3,4,2)])
+stacked_df$LakeConnec <-factor(stacked_df$LakeConnec,levels(stacked_df$LakeConnec)[c(4,3,2,1)]) #reorder least to most conn
 
 #png('Figures/stacked_bar_conn_type.png',width = 7.5,height = 4.75,units = 'in',res=300)
 stack_gg1 <- ggplot(stacked_df, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
@@ -1060,7 +1061,7 @@ stack_gg1 <- ggplot(stacked_df, aes(x = LakeConnec, y = prop_protected, fill = G
   #theme_bw() +
   ggtitle('a) Protected lake = lake center in protected area')+
   scale_y_continuous(limits=c(0,30), breaks=seq(0,30,5)) +
-  scale_x_discrete(labels=c('DRLS','HW','IS','DRS'))+
+  scale_x_discrete(labels=c('IS','HW','DRS','DRLS'))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
@@ -1068,7 +1069,7 @@ stack_gg1 <- ggplot(stacked_df, aes(x = LakeConnec, y = prop_protected, fill = G
   theme(axis.title.y = element_text(vjust=2.7, color='black'))+ #nudge y axis label away from axis a bit
   scale_fill_manual("legend", values = c("Multi-use center" = "navajowhite2", "Strict center" = "olivedrab3"),#,"Unprotected" = "gray70"),
                     labels=c('Strict','Multi-use'))+
-  theme(legend.position=c(0.90,0.86))+ #manually reposition legend inside plot
+  theme(legend.position=c(0.13,0.86))+ #manually reposition legend inside plot
   theme(axis.text.y = element_text(color='black'), axis.text.x=element_text(color='black'))+
   #theme(legend.position='none')+
   theme(legend.title=element_blank()) #remove legend title
@@ -1083,7 +1084,8 @@ stacked_df2 <- rbind.data.frame(protected_GAPS12_100pct_conn_countz[,c(1,4,5)],p
 stacked_df2$prop_protected <- stacked_df2$prop_protected*100 #convert prop to pct
 stacked_df2$Group <- as.factor(stacked_df2$Group)
 stacked_df2$Group <- factor(stacked_df2$Group,levels(stacked_df2$Group)[c(2,1)])
-stacked_df2$LakeConnec <-factor(stacked_df2$LakeConnec,levels(stacked_df2$LakeConnec)[c(1,3,4,2)])
+#stacked_df2$LakeConnec <-factor(stacked_df2$LakeConnec,levels(stacked_df2$LakeConnec)[c(1,3,4,2)])
+stacked_df2$LakeConnec <-factor(stacked_df2$LakeConnec,levels(stacked_df2$LakeConnec)[c(4,3,2,1)]) #reorder least to most conn
 
 #png('Figures/stacked_bar_conn_type_cat100.png',width = 7.5,height = 4.75,units = 'in',res=300)
 stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = Group)) + 
@@ -1094,7 +1096,7 @@ stack_gg2 <- ggplot(stacked_df2, aes(x = LakeConnec, y = prop_protected, fill = 
   #theme_bw() +
   ggtitle('b) Protected lake = 100% catchment protected')+
   scale_y_continuous(limits=c(0,30), breaks=seq(0,30,5)) +
-  scale_x_discrete(labels=c('DRLS','HW','IS','DRS'))+
+  scale_x_discrete(labels=c('IS','HW','DRS','DRLS'))+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))+
   #theme(axis.text.x=element_text(angle=50, hjust=1))+ #tilt axis labels
