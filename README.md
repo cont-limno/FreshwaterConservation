@@ -11,4 +11,4 @@ GIS files for ecoregions and US states, input and output data files associated w
 Figures generated for manuscript and supplementary material
 
 # Rcode
-R scripts used for analysis in manuscript, including custom functions in functions folder. Nick_Models folder contains code specifically for the analysis of protected lake characteristics across ecoregions.
+R scripts used for analysis in manuscript, including custom functions in functions folder.
