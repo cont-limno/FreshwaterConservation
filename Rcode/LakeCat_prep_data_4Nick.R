@@ -1,6 +1,6 @@
 ############# LakeCat protected area analysis: prep data for Nick ##############################
 # Date: 11-26-18
-# updated: 4-29-19; update data links
+# updated: 7-30-19; add 80% lake catchment protection threshold
 # Author: Ian McCullough, immccull@gmail.com
 ################################################################################################
 
@@ -54,10 +54,17 @@ NHD_pts <- subset(NHD_pts, FCODE %in% LAGOS_FCODES)
 ## Protected lakes (centroids) (created in Lakes_in_ProtectedAreas_2019.R; already subset to permanent lakes >=1ha)
 protected_GAPS12 <- shapefile("Data/NHD/NHD_waterbody_pts/NHD_protect_pts_GAPS12_pct.shp")
 protected_GAP3only <- shapefile("Data/NHD/NHD_waterbody_pts/NHD_protect_pts_GAP3only_pct.shp")
+
+# apply 100% and 80% protection thresholds (create subsets)
 protected_GAPS12_COMIDs_100 <- subset(protected_GAPS12, PGAP_S12C >=100)
 protected_GAPS12_COMIDs_100 <- unique(protected_GAPS12_COMIDs_100@data$COMID)
 protected_GAP3only_COMIDs_100 <- subset(protected_GAP3only, PGAP_S3C >=100)
 protected_GAP3only_COMIDs_100 <- unique(protected_GAP3only_COMIDs_100@data$COMID)
+
+protected_GAPS12_COMIDs_80 <- subset(protected_GAPS12, PGAP_S12C >=80)
+protected_GAPS12_COMIDs_80 <- unique(protected_GAPS12_COMIDs_80@data$COMID)
+protected_GAP3only_COMIDs_80 <- subset(protected_GAP3only, PGAP_S3C >=80)
+protected_GAP3only_COMIDs_80 <- unique(protected_GAP3only_COMIDs_80@data$COMID)
 
 # unprotected lake COMIDs
 unprotected_COMIDs <- read.csv("Data/unprotected_COMID.csv")[,2]
@@ -112,6 +119,11 @@ summary(as.factor(PADUS_LakeCat$ProtectGAP12Cat_100))#check
 #PADUS_LakeCat$ProtectGAP123Cat_100 <- ifelse(PADUS_LakeCat$PctGAP_Status123Cat >= 100, "Protected100", "Unprotected100")
 PADUS_LakeCat$ProtectGAP3Cat_100 <- ifelse(PADUS_LakeCat$COMID %in% protected_GAP3only_COMIDs_100, "Protected100", "Unprotected100")
 summary(as.factor(PADUS_LakeCat$ProtectGAP3Cat_100))#check
+
+# add 80% threshold
+PADUS_LakeCat$ProtectGAP12Cat_80 <- ifelse(PADUS_LakeCat$COMID %in% protected_GAPS12_COMIDs_80, "Protected80", "Unprotected80")
+PADUS_LakeCat$ProtectGAP3Cat_80 <- ifelse(PADUS_LakeCat$COMID %in% protected_GAP3only_COMIDs_80, "Protected80", "Unprotected80")
+
 
 # for 75, 90 and 100 % watershed protection (individually for GAP Status 1-2 and 1-3)
 # PADUS_LakeCat$ProtectGAP12Ws_75 <- ifelse(PADUS_LakeCat$PctGAP_Status12Ws >= 75, "Protected75", "Unprotected75")
@@ -229,7 +241,7 @@ cor(PADUS_PRISM$Tmean8110Cat, PADUS_PRISM$Tmean8110Ws, method='pearson', use='pa
 PADUS_NHD$DrainageRatio <- PADUS_NHD$AREASQKM/PADUS_NHD$WsAreaSqKm
 
 a <- PADUS_NHD[,c('COMID','PctGAP_Status12Cat','PctGAP_Status3Cat',
-                  'ProtectGAP12_ctr','ProtectGAP3_ctr',
+                  'ProtectGAP12_ctr','ProtectGAP3_ctr','ProtectGAP12Cat_80','ProtectGAP3Cat_80',
                   'ProtectGAP12Cat_100','ProtectGAP3Cat_100','Unprotected','AREASQKM','CatAreaSqKm','DrainageRatio')]
 b <- PADUS_elevation[,c('COMID','ElevCat')]
 c <- PADUS_WetIndex[,c('COMID','WetIndexCat')]
