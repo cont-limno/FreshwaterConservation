@@ -1,5 +1,4 @@
 ## logistic regression model
-library(sjPlot)
 library(ggplot2)
 library(dplyr)
 library(cowplot)
@@ -23,9 +22,9 @@ dat_log$ProtectGAP12_ctr_fac<-factor(dat_log$ProtectGAP12_ctr, levels=c("Unprote
 
 dat_log$ProtectGAP3_ctr_fac<-factor(dat_log$ProtectGAP3_ctr, levels=c("UnprotectedCtr","ProtectedCtr"))
 
-dat_log$ProtectGAP12Cat_100_fac<-factor(dat_log$ProtectGAP12Cat_100, levels=c("Unprotected100","Protected100"))
+dat_log$ProtectGAP12Cat_80_fac<-factor(dat_log$ProtectGAP12Cat_80, levels=c("Unprotected80","Protected80"))
 
-dat_log$ProtectGAP3Cat_100_fac<-factor(dat_log$ProtectGAP3Cat_100, levels=c("Unprotected100","Protected100"))
+dat_log$ProtectGAP3Cat_80_fac<-factor(dat_log$ProtectGAP3Cat_80, levels=c("Unprotected80","Protected80"))
 
 dat_log$Unprotected_fac<-factor(dat_log$Unprotected, levels=c("Unprotected","Protected"))
 
@@ -36,9 +35,9 @@ logistic_coef<-data.frame()
 regions<-unique(dat_log$WSA9[!is.na(dat_log$WSA9)])
 for (k in 1:length(regions)){
   #difference responses
-  for (j in 30:34){
+  for (j in 32:35){
     #different covariates
-    for ( i in 10:26){
+    for ( i in 12:28){
   
       #determining number of unique values for each covariate for each category of the response
 num_unique_val<-aggregate(dat_log[dat_log$WSA9==regions[k],i]~dat_log[dat_log$WSA9==regions[k],j], FUN=function(x){length(unique(x))})
@@ -93,9 +92,9 @@ logistic_coef<-rbind(logistic_coef,data.frame(response=response,covariate=covari
 #removing some covariates with low variability
 logistic_coef$region_fac<-factor(logistic_coef$region, levels=rev(c("NAP","CPL", "SAP", "TPL","UMW", "SPL", "NPL","WMT", "XER")))
 
-cov_names<-data.frame(covariate_fac=unique(logistic_coef$covariate_fac),full_cov_name=c("Lake Area (km²)", "Catchment Area (km²)", "Drainage Ratio", "Elevation (m)", "Topo. Wetness Index", "% Total Forest", "% Agriculture", "% Wetland", "% Conif. Forest", "Road Density (km/km²)", "% Impervious", "Runoff (mm)", "% Base Flow", "S+N Dep. (kg/ha/yr)", "% Forest Loss", "Mean Precip. (mm)","Mean Temp. (C°)" ))
+cov_names<-data.frame(covariate_fac=unique(logistic_coef$covariate),full_cov_name=c("Lake Area (km²)", "Catchment Area (km²)", "Drainage Ratio", "Elevation (m)", "Topo. Wetness Index", "% Total Forest", "% Agriculture", "% Wetland", "% Conif. Forest", "Road Density (km/km²)", "% Impervious", "Runoff (mm)", "% Base Flow", "S+N Dep. (kg/ha/yr)", "% Forest Loss", "Mean Precip. (mm)","Mean Temp. (C°)" ))
 
-logistic_coef<-left_join(logistic_coef, cov_names, by=c("covariate_fac"))
+logistic_coef<-left_join(logistic_coef, cov_names, by=c("covariate"="covariate_fac"))
 #figuring out the mean coeficient value for each covariate across all protection types so I can order them in the plot.
 
 
@@ -120,7 +119,7 @@ logistic_coef$full_cov_name_fac<-factor(logistic_coef$full_cov_name,levels=(data
 ProtectGAP12_ctr_plot<-ggplot() +
   geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP12_ctr_fac" ,], aes(x=region_fac, y=full_cov_name_fac, fill=coef)) + 
   #scale_fill_distiller("Coef.",palette = "RdBu", limits=c(-2.16,1.78)) + 
-  scale_fill_gradient2( "β", low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.033311 , 1.859125)) +
+  scale_fill_gradient2( "β", low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.05  , 1.9)) +
   scale_y_discrete("") + scale_x_discrete("", position="bottom") +
   geom_point(data=logistic_coef[logistic_coef$response=="ProtectGAP12_ctr_fac" & logistic_coef$p>=.05 ,], aes(x=region_fac, y=full_cov_name, z=NULL), size=.5)+
   theme(axis.text.y = element_text(size=12))
@@ -128,51 +127,51 @@ ProtectGAP12_ctr_plot<-ggplot() +
 
 ProtectGAP3_ctr_plot<-ggplot()+
   geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP3_ctr_fac" ,], aes(x=region_fac, y=full_cov_name_fac, fill=coef)) + 
-  scale_fill_gradient2( "β", low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.033311 , 1.859125)) +
+  scale_fill_gradient2( "β", low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.05  , 1.9)) +
   scale_y_discrete("") + scale_x_discrete("", position="bottom") +
   geom_point(data=logistic_coef[logistic_coef$response=="ProtectGAP3_ctr_fac" & logistic_coef$p>=.05 ,], aes(x=region_fac, y=full_cov_name, z=NULL), size=.5)+
   theme(axis.text.y = element_text(size=12))
 
-ProtectGAP12Cat_100_plot<-ggplot()+
-  geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP12Cat_100_fac" ,], aes(x=region_fac, y=full_cov_name_fac, fill=coef)) + 
-  scale_fill_gradient2( "β",low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.033311 , 1.859125)) +
+ProtectGAP12Cat_80_plot<-ggplot()+
+  geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP12Cat_80_fac" ,], aes(x=region_fac, y=full_cov_name_fac, fill=coef)) + 
+  scale_fill_gradient2( "β",low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.05  , 1.9)) +
   scale_y_discrete("") + scale_x_discrete("", position="bottom") +
-  geom_point(data=logistic_coef[logistic_coef$response=="ProtectGAP12Cat_100_fac" & logistic_coef$p>=.05 ,], aes(x=region_fac, y=full_cov_name, z=NULL), size=.5)+
+  geom_point(data=logistic_coef[logistic_coef$response=="ProtectGAP12Cat_80_fac" & logistic_coef$p>=.05 ,], aes(x=region_fac, y=full_cov_name, z=NULL), size=.5)+
   theme(axis.text.y = element_text(size=12))
 
-ProtectGAP3Cat_100_plot<-ggplot()+
-  geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP3Cat_100_fac" ,], aes(x=region_fac, y=full_cov_name_fac, fill=coef)) + 
-  scale_fill_gradient2(  "β",low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.033311 , 1.859125)) +
+ProtectGAP3Cat_80_plot<-ggplot()+
+  geom_tile(data=logistic_coef[logistic_coef$response=="ProtectGAP3Cat_80_fac" ,], aes(x=region_fac, y=full_cov_name_fac, fill=coef)) + 
+  scale_fill_gradient2(  "β",low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.05  , 1.9)) +
   scale_y_discrete("") + scale_x_discrete("", position="bottom") +
-  geom_point(data=logistic_coef[logistic_coef$response=="ProtectGAP3Cat_100_fac" & logistic_coef$p>=.05 ,], aes(x=region_fac, y=full_cov_name, z=NULL), size=.5)+
+  geom_point(data=logistic_coef[logistic_coef$response=="ProtectGAP3Cat_80_fac" & logistic_coef$p>=.05 ,], aes(x=region_fac, y=full_cov_name, z=NULL), size=.5)+
   theme(axis.text.y = element_text(size=12))
 
 
 Unprotected_plot<-ggplot()+
   geom_tile(data=logistic_coef[logistic_coef$response=="Unprotected_fac" ,], aes(x=region_fac, y=full_cov_name_fac, fill=coef)) + 
-  scale_fill_gradient2( "β", low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.033311 , 1.859125)) +
+  scale_fill_gradient2( "β", low = "blue", mid = "white",high = "red", midpoint = 0, limits=c(-2.05  , 1.9)) +
   scale_y_discrete("") + scale_x_discrete("", position="bottom") +
   geom_point(data=logistic_coef[logistic_coef$response=="Unprotected_fac" & logistic_coef$p>=.05 ,], aes(x=region_fac, y=full_cov_name, z=NULL), size=.5)+
   theme(axis.text.y = element_text(size=12))
 
 ProtectGAP12_ctr_plot_noleg<-ProtectGAP12_ctr_plot + guides(fill=F)
 ProtectGAP3_ctr_plot_noleg<-ProtectGAP3_ctr_plot + guides(fill=F)
-ProtectGAP12Cat_100_plot_noleg<-ProtectGAP12Cat_100_plot + guides(fill=F)
-ProtectGAP3Cat_100_plot_noleg<-ProtectGAP3Cat_100_plot + guides(fill=F)
+ProtectGAP12Cat_80_plot_noleg<-ProtectGAP12Cat_80_plot + guides(fill=F)
+ProtectGAP3Cat_80_plot_noleg<-ProtectGAP3Cat_80_plot + guides(fill=F)
 legend<-get_legend(ProtectGAP12_ctr_plot+ theme(legend.position="right",legend.justification="center",legend.key.height=unit(1,"cm")))
 
-plots_2_2<-plot_grid(plot_grid(ProtectGAP12Cat_100_plot_noleg,ProtectGAP3Cat_100_plot_noleg, ncol = 1, labels="auto"),legend, rel_widths =c(1,.1) )
+plots_2_2<-cowplot::plot_grid(cowplot::plot_grid(ProtectGAP12Cat_80_plot_noleg,ProtectGAP3Cat_80_plot_noleg, ncol = 1, labels="auto"),legend, rel_widths =c(1,.1) )
 
 #plot_w_legend<-plot_grid(plots_2_2, legend, ncol=1, rel_heights = c(1,.1))
 
-ggsave(plot=plots_2_2, filename="Protect_panels_maintext_4_25.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
+ggsave(plot=plots_2_2, filename="Protect_panels_maintext_7_30.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
 
 
-plots_2_sup<-plot_grid(plot_grid(ProtectGAP12_ctr_plot_noleg,ProtectGAP3_ctr_plot_noleg, ncol = 1, labels="auto"),legend, rel_widths =c(1,.1) )
+plots_2_sup<-cowplot::plot_grid(cowplot::plot_grid(ProtectGAP12_ctr_plot_noleg,ProtectGAP3_ctr_plot_noleg, ncol = 1, labels="auto"),legend, rel_widths =c(1,.1) )
 
 #plot_w_legend<-plot_grid(plots_2_2, legend, ncol=1, rel_heights = c(1,.1))
 
-ggsave(plot=plots_2_sup, filename="Protect_panels_supp_4_25.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
+ggsave(plot=plots_2_sup, filename="Protect_panels_supp_7_30.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
 
 # ggsave(filename="ProtectGAP12_ctr.png",plot=ProtectGAP12_ctr_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
 # 
@@ -184,5 +183,5 @@ ggsave(plot=plots_2_sup, filename="Protect_panels_supp_4_25.png",path="~/Documen
 # 
 # ggsave(filename="ProtectGAP12Cat_100.png",plot=ProtectGAP12Cat_100_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
 
-ggsave(filename="Unprotected.png",plot=Unprotected_plot+ggtitle(""),device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
+ggsave(filename="Unprotected_7_30.png",plot=Unprotected_plot+ggtitle(""),device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
 
