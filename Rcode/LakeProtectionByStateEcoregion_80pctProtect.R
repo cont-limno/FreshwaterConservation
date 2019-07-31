@@ -136,11 +136,8 @@ colnames(ecoregions_lake_n) <- c('Ecoregion','nLakes_all','nLakes_perm','nLakes_
 ecoregions_lake_n$pct_perm <- ecoregions_lake_n$nLakes_perm/ecoregions_lake_n$nLakes_all
   
 # export table and reformat in Excel
-#write.csv(LakeProtection_byState_Export, file='Data/LakeProtection_byState.csv')
-#write.csv(LakeProtection_byState_Export_perm, file='Data/LakeProtection_byState_perm.csv')
-
-#write.csv(LakeProtection_byNARS, file='Data/LakeProtection_byNARS.csv')
-#write.csv(LakeProtection_byNARS_perm, file='Data/LakeProtection_byNARS_perm.csv')
+#write.csv(LakeProtection_byState_Export_perm, file='Data/LakeProtection_byState_perm_80pct.csv')
+#write.csv(LakeProtection_byNARS_perm, file='Data/LakeProtection_byNARS_perm_80pct.csv')
 
 ### USES INTERMEDIATE DATA FROM FUNCTIONS: data only exist if run functions line by line
 #state_NARS_COMID <- merge(NARS_COMID[,c(2:4)], lower48_COMID[,c(6,11)], by='COMID',all=F)
@@ -306,28 +303,28 @@ barplot_df_ctr_NARS$PropProtected_gap12_ctr <- barplot_df_ctr_NARS$PropProtected
 barplot_df_ctr_NARS$PropProtected_gap3_ctr <- barplot_df_ctr_NARS$PropProtected_gap3_ctr*100
 melted_Cat_ctr_NARS <- melt(barplot_df_ctr_NARS, id.vars='Ecoregion')
 melted_Cat_ctr_NARS <- merge(melted_Cat_ctr_NARS, LakeProtection_byNARS[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
-melted_Cat_ctr_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1)
+melted_Cat_ctr_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,1,1,2,2)
 
 barplot_df_ctr_NARS_perm <- LakeProtection_byNARS_perm[,c(1,8:9)]
 barplot_df_ctr_NARS_perm$PropProtected_gap12_ctr <- barplot_df_ctr_NARS_perm$PropProtected_gap12_ctr*100 #convert prop to pct
 barplot_df_ctr_NARS_perm$PropProtected_gap3_ctr <- barplot_df_ctr_NARS_perm$PropProtected_gap3_ctr*100
 melted_Cat_ctr_NARS_perm <- melt(barplot_df_ctr_NARS_perm, id.vars='Ecoregion')
 melted_Cat_ctr_NARS_perm <- merge(melted_Cat_ctr_NARS_perm, LakeProtection_byNARS_perm[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
-melted_Cat_ctr_NARS_perm$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1)
+melted_Cat_ctr_NARS_perm$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,1,1,2,2)
 
 barplot_df_Cat80_NARS <- LakeProtection_byNARS[,c(1,10:11)]
 barplot_df_Cat80_NARS$PropProtected_gap12_Cat80 <- barplot_df_Cat80_NARS$PropProtected_gap12_Cat80*100 #convert prop to pct
 barplot_df_Cat80_NARS$PropProtected_gap3_Cat80 <- barplot_df_Cat80_NARS$PropProtected_gap3_Cat80*100
 melted_Cat_Cat80_NARS <- melt(barplot_df_Cat80_NARS, id.vars='Ecoregion')
 melted_Cat_Cat80_NARS <- merge(melted_Cat_Cat80_NARS, LakeProtection_byNARS[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
-melted_Cat_Cat80_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1) 
+melted_Cat_Cat80_NARS$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,1,1,2,2) 
 
 barplot_df_Cat80_NARS_perm <- LakeProtection_byNARS_perm[,c(1,10:11)]
 barplot_df_Cat80_NARS_perm$PropProtected_gap12_Cat80 <- barplot_df_Cat80_NARS_perm$PropProtected_gap12_Cat80*100 #convert prop to pct
 barplot_df_Cat80_NARS_perm$PropProtected_gap3_Cat80 <- barplot_df_Cat80_NARS_perm$PropProtected_gap3_Cat80*100
 melted_Cat_Cat80_NARS_perm <- melt(barplot_df_Cat80_NARS_perm, id.vars='Ecoregion')
 melted_Cat_Cat80_NARS_perm <- merge(melted_Cat_Cat80_NARS_perm, LakeProtection_byNARS_perm[,1:2], by='Ecoregion') # add in number of lakes column to melted df for plot
-melted_Cat_Cat80_NARS_perm$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,2,2,1,1) 
+melted_Cat_Cat80_NARS_perm$PlotOrder <- c(8,8,9,9,3,3,7,7,4,4,6,6,5,5,1,1,2,2) 
 
 # all lakes
 # ecoregion_ctr_plot <- ggplot(melted_Cat_ctr_NARS, aes(x = reorder(Ecoregion, PlotOrder), y = value, fill = variable)) + 
