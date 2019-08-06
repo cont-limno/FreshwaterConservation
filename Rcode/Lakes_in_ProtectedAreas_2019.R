@@ -312,6 +312,10 @@ length(subset(v3, v3 <1 ))/length(v3) #strict ws
 length(subset(v4, v4 <1 ))/length(v4) # multi-use ws
 
 ############# Analyze by LAGOS conn class #################
+## Create new merged tables for plotting
+protected_GAPS12_df_PADUS <- protected_GAPS12@data
+protected_GAP3only_df_PADUS <- protected_GAP3only@data
+
 ## Summarize conn types for all lakes
 LakeConn_countz <- as.data.frame(LAGOSconn %>%
                                    group_by(LakeConnec) %>%
