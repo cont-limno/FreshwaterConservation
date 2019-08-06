@@ -6,6 +6,9 @@ In 2010, the Convention on Biological Diversity stated that by 2020 "at least 17
 
 # Data
 GIS files for ecoregions and US states, input and output data files associated with manuscript
+lower48: shapefile of lower 48 states (continental US)
+NARS_ecoregions: National Aquatic Resource Survey ecoregions (Herlihy et al. 2008)
+NHD: National Hydrography Dataset (NHD plus v2) points (lake centers). Folder titled ArcGIS contains lakes selected by location in ArcGIS that intersect with protected areas (US Protected Areas Database; PADUS v 1.4). Other files were subsets produced in R of protected lakes that occur in strictly protected areas (GAPS 1 and 2) and multi-use areas (GAP 3).
 
 # Figures
 Figures generated for manuscript and supplementary material
