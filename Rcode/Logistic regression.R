@@ -90,7 +90,7 @@ logistic_coef<-rbind(logistic_coef,data.frame(response=response,covariate=covari
 
 ###plotting heat maps of coefficients by region
 #removing some covariates with low variability
-logistic_coef$region_fac<-factor(logistic_coef$region, levels=rev(c("NAP","CPL", "SAP", "TPL","UMW", "SPL", "NPL","WMT", "XER")))
+logistic_coef$region_fac<-factor(logistic_coef$region, levels=rev(c("NAP","CPL", "SAP", "TPL","UMW", "SPL", "NPL", "XER","WMT")))
 
 cov_names<-data.frame(covariate_fac=unique(logistic_coef$covariate),full_cov_name=c("Lake Area (km²)", "Catchment Area (km²)", "Drainage Ratio", "Elevation (m)", "Topo. Wetness Index", "% Total Forest", "% Agriculture", "% Wetland", "% Conif. Forest", "Road Density (km/km²)", "% Impervious", "Runoff (mm)", "% Base Flow", "S+N Dep. (kg/ha/yr)", "% Forest Loss", "Mean Precip. (mm)","Mean Temp. (C°)" ))
 
@@ -164,14 +164,14 @@ plots_2_2<-cowplot::plot_grid(cowplot::plot_grid(ProtectGAP12Cat_80_plot_noleg,P
 
 #plot_w_legend<-plot_grid(plots_2_2, legend, ncol=1, rel_heights = c(1,.1))
 
-ggsave(plot=plots_2_2, filename="Protect_panels_maintext_7_30.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
+ggsave(plot=plots_2_2, filename="Protect_panels_maintext_8_6.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
 
 
 plots_2_sup<-cowplot::plot_grid(cowplot::plot_grid(ProtectGAP12_ctr_plot_noleg,ProtectGAP3_ctr_plot_noleg, ncol = 1, labels="auto"),legend, rel_widths =c(1,.1) )
 
 #plot_w_legend<-plot_grid(plots_2_2, legend, ncol=1, rel_heights = c(1,.1))
 
-ggsave(plot=plots_2_sup, filename="Protect_panels_supp_7_30.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
+ggsave(plot=plots_2_sup, filename="Protect_panels_supp_8_6.png",path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=7, height=9)
 
 # ggsave(filename="ProtectGAP12_ctr.png",plot=ProtectGAP12_ctr_plot,device="png", path="~/Documents/Grad School/Projects/FreshwaterConservation/Data/Nick/Results/Logistic Regression/Heatmaps/", units="in", width=8.5, height=6)
 # 
